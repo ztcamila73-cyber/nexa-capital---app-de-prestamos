@@ -169,6 +169,114 @@ input,select,textarea{font-size:16px}.app-shell{min-height:100vh}.screen{min-hei
 @media(max-width:620px){.cloud-pill{font-size:9px!important;width:auto!important;height:30px!important;padding:0 8px!important;border-radius:999px!important}.cloud-pill::before{width:6px;height:6px}.logout-top{width:35px;height:35px;min-height:35px}.protection-item{grid-template-columns:34px minmax(0,1fr);padding:12px}.protection-icon{width:32px;height:32px}.protection-actions{grid-column:2;justify-content:flex-start}.protection-hero{padding:13px}.protection-hero>.status-badge{display:none}.onboarding-actions{grid-template-columns:1fr}.toast-stack{left:12px;right:12px;width:auto}}
 
 .logout-settings{border:1px solid #111827;background:#111827;color:#fff;border-radius:14px;min-height:44px;padding:11px 14px;font-weight:900;cursor:pointer}.logout-settings:hover{background:#05070a}
+
+
+/* ===== NEXA · navegación cápsula compacta v7 ===== */
+:root{--navy:#0B1D33;--navy-soft:#EEF2F6;--nav-muted:#7A8492}
+
+/* escritorio: control segmentado centrado, no una barra gigante */
+@media(min-width:980px){
+  .main-app{padding-bottom:28px!important}
+  .bottom-nav{
+    position:sticky!important;top:68px!important;bottom:auto!important;
+    width:min(760px,calc(100% - 32px))!important;max-width:760px!important;
+    margin:12px auto 18px!important;padding:5px!important;
+    display:grid!important;grid-template-columns:repeat(6,1fr)!important;gap:3px!important;
+    background:#F1F3F5!important;border:1px solid #E3E7EB!important;
+    border-radius:999px!important;box-shadow:0 4px 16px rgba(16,24,40,.055)!important;
+    backdrop-filter:none!important;overflow:visible!important;
+  }
+  .nav-btn,.nav-btn.center{
+    min-height:38px!important;padding:6px 10px!important;margin:0!important;
+    display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:center!important;
+    gap:6px!important;border:0!important;border-radius:999px!important;background:transparent!important;
+    color:#697386!important;font-size:11px!important;font-weight:760!important;line-height:1!important;
+    white-space:nowrap!important;box-shadow:none!important;transition:.16s ease!important;
+  }
+  .nav-btn .nav-icon,.nav-btn.center .nav-icon{
+    width:18px!important;height:18px!important;min-width:18px!important;margin:0!important;
+    display:grid!important;place-items:center!important;border:0!important;border-radius:0!important;
+    background:transparent!important;color:currentColor!important;box-shadow:none!important;
+  }
+  .nav-btn .nav-icon svg,.nav-btn.center .nav-icon svg{width:16px!important;height:16px!important;stroke-width:1.7!important}
+  .nav-btn.active,.nav-btn.center.active{
+    background:#0B1D33!important;color:#fff!important;
+    box-shadow:0 2px 7px rgba(11,29,51,.16)!important;
+  }
+  .nav-btn.active .nav-icon,.nav-btn.center.active .nav-icon{color:#fff!important;background:transparent!important}
+  .nav-btn:hover:not(.active){background:rgba(255,255,255,.72)!important;color:#26384D!important}
+}
+
+/* móvil: cápsula baja, ligera y útil con una mano */
+@media(max-width:979px){
+  .main-app{padding-bottom:78px!important}
+  .bottom-nav{
+    position:fixed!important;z-index:40!important;
+    left:9px!important;right:9px!important;bottom:8px!important;
+    width:auto!important;max-width:520px!important;margin:0 auto!important;
+    padding:4px 5px calc(4px + env(safe-area-inset-bottom))!important;
+    display:grid!important;grid-template-columns:repeat(6,minmax(0,1fr))!important;gap:2px!important;
+    background:rgba(246,247,249,.94)!important;border:1px solid rgba(219,224,230,.92)!important;
+    border-radius:21px!important;box-shadow:0 8px 26px rgba(16,24,40,.12)!important;
+    backdrop-filter:blur(20px) saturate(150%)!important;-webkit-backdrop-filter:blur(20px) saturate(150%)!important;
+    overflow:hidden!important;
+  }
+  .nav-btn,.nav-btn.center{
+    min-height:45px!important;padding:4px 1px!important;margin:0!important;
+    display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;
+    gap:2px!important;border:0!important;border-radius:15px!important;background:transparent!important;
+    color:#7A8492!important;font-size:8.5px!important;font-weight:720!important;line-height:1!important;
+    letter-spacing:-.08px!important;box-shadow:none!important;
+  }
+  .nav-btn .nav-icon,.nav-btn.center .nav-icon{
+    width:18px!important;height:18px!important;min-width:18px!important;margin:0!important;
+    display:grid!important;place-items:center!important;border:0!important;border-radius:0!important;
+    background:transparent!important;color:currentColor!important;box-shadow:none!important;
+  }
+  .nav-btn .nav-icon svg,.nav-btn.center .nav-icon svg{width:16px!important;height:16px!important;stroke-width:1.65!important}
+  .nav-btn.active,.nav-btn.center.active{
+    background:#0B1D33!important;color:#fff!important;
+    box-shadow:0 2px 7px rgba(11,29,51,.16)!important;
+  }
+  .nav-btn.active .nav-icon,.nav-btn.center.active .nav-icon{background:transparent!important;color:#fff!important}
+  .nav-btn:active{transform:scale(.97)!important}
+}
+@media(max-width:370px){
+  .bottom-nav{left:5px!important;right:5px!important;padding-left:3px!important;padding-right:3px!important}
+  .nav-btn,.nav-btn.center{min-height:43px!important;font-size:7.8px!important}
+  .nav-btn .nav-icon svg,.nav-btn.center .nav-icon svg{width:15px!important;height:15px!important}
+}
+
+/* ===== Inicio con el mismo lenguaje visual ===== */
+.quick-actions{gap:8px!important}
+.quick-btn{
+  min-height:68px!important;padding:10px 11px!important;border:1px solid #E5E8EC!important;
+  border-radius:16px!important;background:#fff!important;box-shadow:0 2px 8px rgba(16,24,40,.035)!important;
+  display:grid!important;grid-template-columns:30px 1fr!important;grid-template-rows:auto auto!important;
+  column-gap:9px!important;align-items:center!important;text-align:left!important;transition:.16s ease!important;
+}
+.quick-btn .qicon{
+  grid-row:1/3!important;width:30px!important;height:30px!important;border-radius:10px!important;
+  background:#F1F3F5!important;color:#0B1D33!important;display:grid!important;place-items:center!important;
+}
+.quick-btn .qicon svg{width:16px!important;height:16px!important;stroke-width:1.7!important}
+.quick-btn b{margin:0!important;font-size:12px!important;line-height:1.15!important;color:#172334!important}
+.quick-btn span{margin:2px 0 0!important;font-size:9.5px!important;line-height:1.2!important;color:#7A8492!important}
+.quick-btn:hover{border-color:#D6DCE3!important;background:#FBFCFD!important;transform:translateY(-1px)}
+.quick-btn:active{transform:scale(.985)}
+
+.stats{gap:8px!important}
+.stat-card{border-radius:17px!important;border-color:#E5E8EC!important;box-shadow:0 2px 8px rgba(16,24,40,.03)!important}
+.stat-card.dark{background:#0B1D33!important}
+
+@media(max-width:540px){
+  .quick-actions{grid-template-columns:1fr 1fr!important;gap:7px!important}
+  .quick-btn{min-height:64px!important;padding:9px!important;grid-template-columns:27px 1fr!important;column-gap:7px!important}
+  .quick-btn .qicon{width:27px!important;height:27px!important;border-radius:9px!important}
+  .quick-btn .qicon svg{width:14px!important;height:14px!important}
+  .quick-btn b{font-size:11px!important}.quick-btn span{font-size:8.8px!important}
+}
+
 </style>
 </head>
 <body>
