@@ -523,6 +523,19 @@ body.modal-open{overflow:hidden!important;touch-action:none}
   .protection-actions .mini-btn{font-size:9.2px!important}
 }
 
+/* NEXA v17 · acceso limpio + bienvenida */
+.welcome-screen{min-height:100dvh;display:grid;place-items:center;padding:28px 20px;background:linear-gradient(180deg,#F7F8FA 0%,#FFFFFF 100%)}
+.welcome-card{width:min(430px,100%);text-align:center;padding:34px 24px 30px;border:1px solid var(--line);border-radius:28px;background:#fff;box-shadow:0 18px 60px rgba(11,29,51,.08)}
+.welcome-logo{width:62px;height:62px;object-fit:contain;margin:0 auto 18px;display:block}
+.welcome-kicker{font-size:11px;letter-spacing:1.1px;text-transform:uppercase;color:var(--muted);font-weight:850;margin-bottom:8px}
+.welcome-title{margin:0;color:var(--brand);font-size:30px;line-height:1.05;letter-spacing:-1px}
+.welcome-name{margin:9px 0 0;font-size:16px;color:#344054;font-weight:750}
+.welcome-sub{margin:10px auto 0;max-width:310px;color:var(--muted);font-size:13px;line-height:1.45}
+.welcome-loader{width:42px;height:4px;border-radius:999px;background:#E8EDF2;margin:22px auto 0;overflow:hidden}
+.welcome-loader::after{content:"";display:block;width:55%;height:100%;border-radius:inherit;background:var(--brand);animation:nexaWelcome 1s ease-in-out infinite alternate}
+@keyframes nexaWelcome{from{transform:translateX(-10%)}to{transform:translateX(90%)}}
+@media(max-width:480px){.welcome-card{border:0;box-shadow:none;background:transparent;padding:24px 10px}.welcome-title{font-size:27px}}
+
 </style>
 </head>
 <body>
@@ -557,6 +570,17 @@ body.modal-open{overflow:hidden!important;touch-action:none}
     </div>
 
     <div id="firebaseSetupNote" class="setup-note hidden"><b>Falta conectar el Firebase nuevo.</b><br>Busca <b>NEXA_FIREBASE_CONFIG</b> al final de este archivo y pega allí la configuración del proyecto Firebase exclusivo de esta aplicación.</div>
+  </div>
+</section>
+
+<section id="welcomeScreen" class="screen hidden welcome-screen" aria-live="polite">
+  <div class="welcome-card">
+    <img class="welcome-logo" id="welcomeLogo" alt="NEXA CAPITAL">
+    <div class="welcome-kicker">NEXA CAPITAL</div>
+    <h1 class="welcome-title">Bienvenido</h1>
+    <div id="welcomeUserName" class="welcome-name">Tu información está lista</div>
+    <div class="welcome-sub">Cargando tus negocios y verificando la información guardada.</div>
+    <div class="welcome-loader" aria-hidden="true"></div>
   </div>
 </section>
 
@@ -796,7 +820,8 @@ normalizeState();
 function firebaseConfigured(){const c=NEXA_FIREBASE_CONFIG;return !!(c.apiKey&&c.authDomain&&c.databaseURL&&c.projectId&&c.appId&&!String(c.apiKey).includes('PEGA_AQUI')&&!String(c.projectId).includes('TU-PROYECTO'))}
 function cloudPath(uid,suffix=''){return `users/${uid}/${APP_PATH}${suffix?'/'+suffix:''}`}
 function setCloud(kind,text){const pill=$('cloudPill'),s=$('firebaseStateText'),badge=$('firebaseProtectionBadge');if(pill){pill.className='cloud-pill '+(kind||'');pill.textContent=text}if(s)s.textContent=kind==='ok'?'Activa · cada cambio se guarda automáticamente':kind==='work'?'Guardando cambios en la nube…':kind==='bad'?'No se pudo confirmar el guardado en la nube':text;if(badge){badge.className='status-badge '+(kind==='ok'?'success':kind==='bad'?'error':'warn');badge.textContent=kind==='ok'?'Activa':kind==='bad'?'Revisar':'Guardando'}renderProtectionOverall()}
-function firebaseErrorText(e){const code=String(e?.code||'');if(code.includes('invalid-credential')||code.includes('wrong-password'))return 'Correo o contraseña incorrectos.';if(code.includes('email-already-in-use'))return 'Ese correo ya tiene una cuenta.';if(code.includes('weak-password'))return 'La contraseña debe tener al menos 6 caracteres.';if(code.includes('network'))return 'No hay conexión estable a Internet.';return e?.message||code||'Error de Firebase.'}
+function validEmail(email){return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i.test(String(email||'').trim())}
+function firebaseErrorText(e){const code=String(e?.code||'');if(code.includes('invalid-email'))return 'El correo no tiene un formato válido.';if(code.includes('invalid-credential')||code.includes('wrong-password')||code.includes('user-not-found'))return 'Correo o contraseña incorrectos.';if(code.includes('email-already-in-use'))return 'Ese correo ya tiene una cuenta.';if(code.includes('weak-password'))return 'La contraseña debe tener al menos 6 caracteres.';if(code.includes('network'))return 'No hay conexión estable a Internet.';if(code.includes('too-many-requests'))return 'Hubo demasiados intentos. Espera un momento y vuelve a intentar.';return 'No se pudo completar la operación. Intenta nuevamente.'}
 function initFirebase(){
   if(!firebaseConfigured()){$('firebaseSetupNote').classList.remove('hidden');setCloud('bad','Firebase sin configurar');return false}
   try{firebaseApp=firebase.apps?.length?firebase.app():firebase.initializeApp(NEXA_FIREBASE_CONFIG);cloudAuth=firebase.auth();cloudDb=firebase.database();cloudAuth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});cloudAuth.onAuthStateChanged(async user=>{if(user){currentUser={id:user.uid,email:user.email||'',name:user.displayName||(user.email||'Usuario').split('@')[0]};await loadCloudState(user.uid);openAfterLogin()}else{currentUser=null;showOnly('authScreen')}});return true}catch(e){console.error(e);setCloud('bad','Error Firebase');return false}
@@ -810,14 +835,14 @@ async function maybeDailyBackup(snapshot,reason='respaldo diario automático'){i
 async function loadBackupStatus(){lastFirebaseBackupAt='';lastFirebaseBackupReason='';if(!cloudDb||!currentUser?.id){renderBackupStatus();return}try{const snap=await cloudDb.ref(cloudPath(currentUser.id,'backups')).limitToLast(1).once('value'),val=snap.val()||{},last=Object.values(val)[0];if(last){lastFirebaseBackupAt=last.createdAt||'';lastFirebaseBackupReason=last.reason||''}}catch(e){console.warn('Estado de respaldos:',e)}renderBackupStatus()}
 function renderBackupStatus(){const text=$('firebaseBackupStateText'),badge=$('firebaseBackupBadge');if(!text||!badge)return;if(lastFirebaseBackupAt){text.textContent=`Última copia: ${new Date(lastFirebaseBackupAt).toLocaleString('es-CO')}${lastFirebaseBackupReason?' · '+lastFirebaseBackupReason:''}`;badge.className='status-badge success';badge.textContent='Al día'}else{text.textContent='Se crea automáticamente al entrar a la app y antes de acciones críticas.';badge.className='status-badge warn';badge.textContent='Pendiente'}renderProtectionOverall()}
 
-function showOnly(idToShow){['authScreen','businessScreen','mainScreen'].forEach(x=>$(x).classList.toggle('hidden',x!==idToShow))}
+function showOnly(idToShow){['authScreen','welcomeScreen','businessScreen','mainScreen'].forEach(x=>{const el=$(x);if(el)el.classList.toggle('hidden',x!==idToShow)})}
 function showToast(title,text='',kind='good'){const el=document.createElement('div'),icon=kind==='bad'?'<svg viewBox="0 0 24 24"><path d="M12 8v5"/><path d="M12 17h.01"/><path d="M10.3 4.4 2.8 18a2 2 0 0 0 1.8 3h14.8a2 2 0 0 0 1.8-3L13.7 4.4a2 2 0 0 0-3.4 0Z"/></svg>':kind==='info'?'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7h.01"/></svg>':'<svg viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg>';el.className='toast '+kind;el.innerHTML=`<div class="toast-icon">${icon}</div><div><div class="toast-title">${esc(title)}</div>${text?`<div class="toast-text">${esc(text)}</div>`:''}</div>`;$('toastStack').appendChild(el);setTimeout(()=>el.remove(),kind==='bad'?6000:4200)}
 function showLogin(){$('loginBox').classList.remove('hidden');$('registerBox').classList.add('hidden');$('forgotBox').classList.add('hidden')}
 function showRegister(){$('loginBox').classList.add('hidden');$('registerBox').classList.remove('hidden');$('forgotBox').classList.add('hidden')}
 function showForgot(){$('loginBox').classList.add('hidden');$('registerBox').classList.add('hidden');$('forgotBox').classList.remove('hidden');$('forgotEmail').value=$('loginEmail').value||''}
-async function login(){if(!cloudAuth)return showToast('Firebase sin configurar','Primero conecta el proyecto Firebase nuevo.','bad');const email=$('loginEmail').value.trim().toLowerCase(),pass=$('loginPass').value;if(!email||!pass)return showToast('Completa los datos','','bad');try{await cloudAuth.signInWithEmailAndPassword(email,pass)}catch(e){showToast('No se pudo iniciar sesión',firebaseErrorText(e),'bad')}}
-async function register(){if(!cloudAuth)return showToast('Firebase sin configurar','Primero conecta el proyecto Firebase nuevo.','bad');const name=$('regName').value.trim(),email=$('regEmail').value.trim().toLowerCase(),pass=$('regPass').value;if(!name||!email||pass.length<6)return showToast('Revisa los datos','Nombre, correo y contraseña de mínimo 6 caracteres.','bad');try{const cred=await cloudAuth.createUserWithEmailAndPassword(email,pass);await cred.user.updateProfile({displayName:name});currentUser={id:cred.user.uid,email,name};await loadCloudState(cred.user.uid);openAfterLogin()}catch(e){showToast('No se pudo crear la cuenta',firebaseErrorText(e),'bad')}}
-async function resetPassword(){if(!cloudAuth)return showToast('Firebase sin configurar','','bad');const email=$('forgotEmail').value.trim().toLowerCase();if(!email)return showToast('Escribe tu correo','','bad');try{await cloudAuth.sendPasswordResetEmail(email);showLogin();showToast('Revisa tu correo','Se envió el enlace para cambiar la contraseña.')}catch(e){showToast('No se pudo enviar',firebaseErrorText(e),'bad')}}
+async function login(){if(!cloudAuth)return showToast('Firebase sin configurar','Primero conecta el proyecto Firebase nuevo.','bad');const email=$('loginEmail').value.trim().toLowerCase(),pass=$('loginPass').value;if(!email)return showToast('Escribe tu correo','Ingresa el correo con el que registraste NEXA.','bad');if(!validEmail(email))return showToast('Revisa el correo','Ejemplo: nombre@correo.com','bad');if(!pass)return showToast('Escribe tu contraseña','','bad');try{await cloudAuth.signInWithEmailAndPassword(email,pass)}catch(e){showToast('No se pudo iniciar sesión',firebaseErrorText(e),'bad')}}
+async function register(){if(!cloudAuth)return showToast('Firebase sin configurar','Primero conecta el proyecto Firebase nuevo.','bad');const name=$('regName').value.trim(),email=$('regEmail').value.trim().toLowerCase(),pass=$('regPass').value;if(!name)return showToast('Escribe tu nombre','','bad');if(!validEmail(email))return showToast('Revisa el correo','Usa un correo válido, por ejemplo nombre@correo.com.','bad');if(pass.length<6)return showToast('Contraseña muy corta','Usa mínimo 6 caracteres.','bad');try{const cred=await cloudAuth.createUserWithEmailAndPassword(email,pass);await cred.user.updateProfile({displayName:name});currentUser={id:cred.user.uid,email,name};await loadCloudState(cred.user.uid);openAfterLogin()}catch(e){showToast('No se pudo crear la cuenta',firebaseErrorText(e),'bad')}}
+async function resetPassword(){if(!cloudAuth)return showToast('Firebase sin configurar','','bad');const email=$('forgotEmail').value.trim().toLowerCase();if(!email)return showToast('Escribe tu correo','','bad');if(!validEmail(email))return showToast('Revisa el correo','Ejemplo: nombre@correo.com','bad');try{await cloudAuth.sendPasswordResetEmail(email);showLogin();showToast('Revisa tu correo','Se envió el enlace para cambiar la contraseña.')}catch(e){showToast('No se pudo enviar',firebaseErrorText(e),'bad')}}
 async function logout(){if(cloudAuth)await cloudAuth.signOut();currentBusinessId=null;currentUser=null;showOnly('authScreen')}
 
 function protectionOnboardingKey(){return PROTECTION_ONBOARDING_KEY+(currentUser?.id||'guest')}
@@ -825,7 +850,8 @@ function showProtectionOnboarding(){if(!currentUser||localStorage.getItem(protec
 function checkProtectionReminder(){if(!currentUser)return;const todayKey='NEXA_PROTECTION_REMINDER_'+currentUser.id+'_'+today();if(localStorage.getItem(todayKey))return;if(googleSheetsMeta.sheetId&&googleSheetsMeta.lastSyncAt){const age=(Date.now()-new Date(googleSheetsMeta.lastSyncAt).getTime())/86400000;if(age>=7){localStorage.setItem(todayKey,'1');setTimeout(()=>showToast('Google necesita una actualización','La última copia de Google Sheets tiene más de 7 días. En Configuración pulsa “Actualizar ahora”.','info'),1200)}}}
 function renderProtectionOverall(){const el=$('protectionOverallBadge');if(!el)return;const firebaseOk=$('cloudPill')?.classList.contains('ok'),googleOk=!!googleSheetsMeta.sheetId;if(firebaseOk&&googleOk){el.className='status-badge success';el.textContent='Protección reforzada'}else if(firebaseOk){el.className='status-badge success';el.textContent='Protección activa'}else{el.className='status-badge error';el.textContent='Revisar Firebase'}}
 
-function openAfterLogin(){if(!currentUser)return;currentBusinessId=localStorage.getItem('NEXA_LAST_BUSINESS_'+currentUser.id)||null;if(!db.businesses.some(b=>b.id===currentBusinessId))currentBusinessId=null;if(currentBusinessId)openBusiness(currentBusinessId);else renderBusinessSelector()}
+let welcomeTimer=null;
+function openAfterLogin(){if(!currentUser)return;clearTimeout(welcomeTimer);currentBusinessId=null;showOnly('welcomeScreen');const name=(currentUser.name||currentUser.email||'').trim();const nameEl=$('welcomeUserName');if(nameEl)nameEl.textContent=name?`Hola, ${name.split('@')[0]}`:'Tus negocios están listos';const authLogo=document.querySelector('.brand-logo');const welcomeLogo=$('welcomeLogo');if(authLogo&&welcomeLogo)welcomeLogo.src=authLogo.src;welcomeTimer=setTimeout(()=>{if(currentUser)renderBusinessSelector()},900)}
 function renderBusinessSelector(){showOnly('businessScreen');const grid=$('businessGrid');const businesses=[...db.businesses].sort((a,b)=>String(a.createdAt).localeCompare(String(b.createdAt)));const trash=`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M7 7l1 13h8l1-13"/><path d="M10 11v5M14 11v5"/></svg>`;grid.innerHTML=businesses.map((b,i)=>`<div class="business-row"><button class="business-card" type="button" data-open-business="${b.id}"><div class="business-icon">${i+1}</div><div><b>${esc(b.name)}</b><span>${businessClientCount(b.id)} cliente(s) · ${businessActiveLoanCount(b.id)} préstamo(s) activo(s)</span></div></button><button class="business-delete" type="button" data-delete-business="${b.id}" aria-label="Eliminar ${esc(b.name)}" title="Eliminar negocio">${trash}</button></div>`).join('')+`<div class="business-row"><button class="business-card add" type="button" data-action="create-business"><div class="business-icon">＋</div><div><b>Crear nuevo negocio</b><span>Agrega otro negocio independiente</span></div></button></div>`}
 function businessClientCount(businessId){return db.clients.filter(c=>c.businessId===businessId).length}
 function businessActiveLoanCount(businessId){return db.loans.filter(l=>l.businessId===businessId&&activeStatus(l)).length}
