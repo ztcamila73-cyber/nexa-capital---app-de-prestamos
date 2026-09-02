@@ -11,6 +11,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 :root{
   --bg:#F7F8FA;--card:#FFFFFF;--ink:#1F2937;--muted:#6B7280;--line:#E3E8EE;
@@ -161,7 +162,7 @@ input,select,textarea{font-size:16px}.app-shell{min-height:100vh}.screen{min-hei
 .protection-card{overflow:hidden}.protection-hero{border:1px solid #E4E7EC;border-radius:20px;padding:16px;background:linear-gradient(145deg,#fff,#F8FAFC);display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px}
 .protection-hero-main{display:flex;gap:11px;align-items:flex-start}.protection-shield{width:38px;height:38px;border-radius:12px;background:#0B1D33;color:#fff;display:grid;place-items:center;flex:0 0 auto}.protection-shield svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.protection-hero-title{font-size:16px;font-weight:900;letter-spacing:-.2px}.protection-hero-sub{font-size:12px;color:var(--muted);line-height:1.45;margin-top:3px}
 .status-badge{display:inline-flex;align-items:center;gap:6px;min-height:26px;padding:5px 9px;border-radius:999px;font-size:10px;font-weight:850;white-space:nowrap;border:1px solid #E4E7EC;background:#F8FAFC;color:#475467}.status-badge::before{content:"";width:6px;height:6px;border-radius:50%;background:#98A2B3}.status-badge.success{background:#ECFDF3;border-color:#ABEFC6;color:#067647}.status-badge.success::before{background:#17B26A}.status-badge.warn{background:#FFFAEB;border-color:#FEDF89;color:#B54708}.status-badge.warn::before{background:#F79009}.status-badge.error{background:#FEF3F2;border-color:#FECDCA;color:#B42318}.status-badge.error::before{background:#F04438}
-.protection-list{border:1px solid #EAECF0;border-radius:18px;overflow:hidden;background:#fff}.protection-item{display:grid;grid-template-columns:38px minmax(0,1fr) auto;gap:11px;align-items:center;padding:14px 13px;border-bottom:1px solid #EAECF0}.protection-item:last-child{border-bottom:0}.protection-icon{width:36px;height:36px;border-radius:11px;background:#F2F4F7;color:#344054;display:grid;place-items:center}.protection-icon svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.protection-title{font-size:13px;font-weight:900;color:#1D2939}.protection-sub{font-size:11px;color:#667085;line-height:1.4;margin-top:2px}.protection-actions{display:flex;gap:7px;align-items:center;flex-wrap:wrap;justify-content:flex-end}.google-protection.connected .protection-icon{background:#ECFDF3;color:#067647}.google-protection.issue .protection-icon{background:#FFFAEB;color:#B54708}.google-issue{font-size:10px;color:#B54708;font-weight:700;margin-top:5px;line-height:1.35}
+.protection-list{border:1px solid #EAECF0;border-radius:18px;overflow:hidden;background:#fff}.protection-item{display:grid;grid-template-columns:38px minmax(0,1fr) auto;gap:11px;align-items:center;padding:14px 13px;border-bottom:1px solid #EAECF0}.protection-item:last-child{border-bottom:0}.protection-icon{width:36px;height:36px;border-radius:11px;background:#F2F4F7;color:#344054;display:grid;place-items:center}.protection-icon svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.protection-title{font-size:13px;font-weight:900;color:#1D2939}.protection-sub{font-size:11px;color:#667085;line-height:1.4;margin-top:2px}.protection-actions{display:flex;gap:7px;align-items:center;flex-wrap:wrap;justify-content:flex-end}.google-protection.connected .protection-icon{background:#ECFDF3;color:#067647}.google-protection.issue .protection-icon{background:#FFFAEB;color:#B54708}.google-issue{font-size:10px;color:#B54708;font-weight:700;margin-top:5px;line-height:1.35}.google-optional{font-size:10px;color:#667085;margin-top:5px;line-height:1.4}.google-protection.issue{background:#FFFDF7}.google-protection.issue .google-issue{padding:7px 9px;border-radius:10px;background:#FFFAEB;border:1px solid #FEDF89}.google-protection.optional .protection-icon{background:#F2F4F7;color:#667085}
 .manual-backups{margin-top:12px;border:1px solid #EAECF0;border-radius:16px;background:#fff;overflow:hidden}.manual-backups summary{cursor:pointer;list-style:none;padding:13px 14px;font-size:12px;font-weight:850;display:flex;align-items:center;justify-content:space-between}.manual-backups summary::-webkit-details-marker{display:none}.manual-backups summary::after{content:"⌄";color:#667085;font-size:15px}.manual-backups[open] summary::after{transform:rotate(180deg)}.manual-backup-body{border-top:1px solid #EAECF0;padding:4px 14px 10px}.manual-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid #F2F4F7}.manual-row:last-child{border-bottom:0}.manual-row b{font-size:12px}.manual-row span{display:block;color:#667085;font-size:10px;margin-top:2px}
 .onboarding-protection{display:grid;gap:12px}.onboarding-lock{width:54px;height:54px;border-radius:17px;background:#0B1D33;color:#fff;display:grid;place-items:center}.onboarding-lock svg{width:26px;height:26px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}.onboarding-lead{font-size:14px;color:#475467;line-height:1.5}.onboarding-step{display:flex;gap:10px;align-items:flex-start;padding:11px 12px;border:1px solid #EAECF0;border-radius:14px;background:#FCFCFD}.onboarding-step .step-dot{width:23px;height:23px;border-radius:50%;display:grid;place-items:center;flex:0 0 auto;background:#ECFDF3;color:#067647;font-size:12px;font-weight:900}.onboarding-step.pending .step-dot{background:#FFFAEB;color:#B54708}.onboarding-step b{font-size:12px;display:block}.onboarding-step span{font-size:10px;color:#667085;display:block;margin-top:2px;line-height:1.4}.onboarding-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:2px}
 .toast-stack{top:14px;left:auto;right:14px;width:min(430px,calc(100% - 28px))}.toast{width:100%;border-radius:18px;padding:12px 13px;gap:11px;box-shadow:0 18px 50px rgba(16,24,40,.16);border:1px solid #EAECF0;animation:toastIn .18s ease-out}.toast-icon{width:30px;height:30px;border-radius:10px;display:grid;place-items:center;flex:0 0 auto;background:#ECFDF3;color:#067647}.toast.bad .toast-icon{background:#FEF3F2;color:#B42318}.toast.info .toast-icon{background:#EFF8FF;color:#175CD3}.toast-icon svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}.toast-title{font-size:12px;font-weight:900;color:#1D2939}.toast-text{font-size:10px;color:#667085;line-height:1.4;margin-top:2px}@keyframes toastIn{from{opacity:0;transform:translateY(-8px) scale(.98)}to{opacity:1;transform:none}}
@@ -327,13 +328,13 @@ input,select,textarea{font-size:16px}.app-shell{min-height:100vh}.screen{min-hei
         <div class="card flat protection-card">
           <div class="section-head"><h2>Protección de datos</h2></div>
           <div class="protection-hero">
-            <div class="protection-hero-main"><div class="protection-shield"><svg viewBox="0 0 24 24"><path d="M12 3 5 6v5c0 4.6 2.8 8.2 7 10 4.2-1.8 7-5.4 7-10V6l-7-3Z"/><path d="m9 12 2 2 4-4"/></svg></div><div><div class="protection-hero-title">Protección automática</div><div class="protection-hero-sub">NEXA guarda tus cambios en la nube y crea una copia diaria. Google Sheets funciona como segunda copia externa.</div></div></div>
+            <div class="protection-hero-main"><div class="protection-shield"><svg viewBox="0 0 24 24"><path d="M12 3 5 6v5c0 4.6 2.8 8.2 7 10 4.2-1.8 7-5.4 7-10V6l-7-3Z"/><path d="m9 12 2 2 4-4"/></svg></div><div><div class="protection-hero-title">Protección automática</div><div class="protection-hero-sub">NEXA guarda tus cambios en la nube y crea una copia diaria. Google Sheets mantiene una segunda copia visible del mismo estado de NEXA.</div></div></div>
             <span id="protectionOverallBadge" class="status-badge">Revisando</span>
           </div>
           <div class="protection-list">
             <div class="protection-item"><div class="protection-icon"><svg viewBox="0 0 24 24"><path d="M7 18h10a4 4 0 0 0 .7-7.9A6 6 0 0 0 6.2 9.2 4.5 4.5 0 0 0 7 18Z"/><path d="m9.5 13 1.7 1.7 3.5-3.5"/></svg></div><div><div class="protection-title">Firebase · guardado principal</div><div id="firebaseStateText" class="protection-sub">Comprobando conexión…</div></div><div class="protection-actions"><span id="firebaseProtectionBadge" class="status-badge">Revisando</span><button class="mini-btn" type="button" data-action="verify-cloud">Comprobar</button></div></div>
             <div class="protection-item"><div class="protection-icon"><svg viewBox="0 0 24 24"><path d="M12 3v12"/><path d="m8 11 4 4 4-4"/><path d="M5 18h14v3H5z"/></svg></div><div><div class="protection-title">Copia diaria automática</div><div id="firebaseBackupStateText" class="protection-sub">Se crea automáticamente al entrar a la app.</div></div><div class="protection-actions"><span id="firebaseBackupBadge" class="status-badge success">Automática</span><button class="mini-btn" type="button" data-action="cloud-backup">Crear ahora</button></div></div>
-            <div id="googleProtectionItem" class="protection-item google-protection"><div class="protection-icon"><svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h8M11 6v12M15 6v12"/></svg></div><div><div class="protection-title">Google Sheets · segunda copia</div><div id="googleSheetsStateText" class="protection-sub">Conecta una cuenta una sola vez para crear la hoja de respaldo.</div><div id="googleSheetsIssue" class="google-issue hidden"></div></div><div class="protection-actions"><span id="googleSheetsBadge" class="status-badge warn">Sin conectar</span><button id="googleSheetsButton" class="mini-btn" type="button" data-action="google-sheets-sync">Conectar Google</button><button id="googleSheetsOpenButton" class="mini-btn hidden" type="button" data-action="open-google-sheet">Abrir hoja</button></div></div>
+            <div id="googleProtectionItem" class="protection-item google-protection optional"><div class="protection-icon"><svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h8M11 6v12M15 6v12"/></svg></div><div><div class="protection-title">Google Sheets · segunda copia en vivo</div><div id="googleSheetsStateText" class="protection-sub">Conecta tu cuenta una vez y NEXA mantendrá el mismo archivo actualizado mientras uses la app con Internet.</div><div id="googleSheetsIssue" class="google-issue hidden"></div><div id="googleSheetsOptional" class="google-optional">Firebase sigue siendo la base principal; Google Sheets será la segunda copia visible.</div></div><div class="protection-actions"><span id="googleSheetsBadge" class="status-badge">Opcional</span><button id="googleSheetsButton" class="mini-btn" type="button" data-action="google-sheets-sync">Conectar Google</button><button id="googleSheetsOpenButton" class="mini-btn hidden" type="button" data-action="open-google-sheet">Abrir hoja</button><button id="googleExcelFallback" class="mini-btn" type="button" data-action="download-excel">Descargar Excel</button></div></div>
           </div>
           <details class="manual-backups"><summary>Copias manuales y exportaciones</summary><div class="manual-backup-body">
             <div class="manual-row"><div><b>Excel completo</b><span>Negocios, clientes, préstamos, cuotas y movimientos.</span></div><button class="mini-btn" type="button" data-action="download-excel">Descargar</button></div>
@@ -370,9 +371,14 @@ const NEXA_FIREBASE_CONFIG={
   appId:"1:796459330894:web:c9f25c8e6f08c5e436421f"
 };
 
-/* Google Sheets usa la cuenta de Google vinculada al usuario de Firebase.
-   Una sola conexión desde Configuración crea el archivo de respaldo. */
-const GOOGLE_SHEETS_SCOPES=["https://www.googleapis.com/auth/spreadsheets","https://www.googleapis.com/auth/drive.file"];
+/* Google Sheets se conecta DIRECTAMENTE con Google Identity Services.
+   No depende de Google como proveedor de Firebase Authentication.
+   CONFIGURACIÓN ÚNICA DEL ADMINISTRADOR:
+   crea un OAuth Client ID tipo "Aplicación web" para NEXA y pégalo aquí.
+   Agrega el dominio de Vercel en "Orígenes de JavaScript autorizados". */
+const NEXA_GOOGLE_OAUTH_CLIENT_ID="PEGA_AQUI_TU_CLIENT_ID.apps.googleusercontent.com";
+// Alcance mínimo: solo archivos de Google Drive creados/usados por NEXA.
+const NEXA_GOOGLE_SCOPES="https://www.googleapis.com/auth/drive.file";
 
 const APP_KEY='NEXA_CAPITAL_LOCAL_V1';
 const CLOUD_OWNER_KEY='NEXA_CAPITAL_CLOUD_OWNER_V1';
@@ -390,8 +396,10 @@ let lastRecalc=null;
 let businessModalMode='create';
 let pendingDeleteBusinessId=null;
 let googleAccessToken='';
+let googleSheetsTokenClient=null;
 let googleSheetsSyncTimer=null;
-let googleSheetsMeta={sheetId:'',sheetUrl:'',lastSyncAt:'',googleConnected:false,googleEmail:''};
+let googleSheetsSyncInFlight=false;
+let googleSheetsMeta={sheetId:'',sheetUrl:'',lastSyncAt:'',googleConnected:false,googleEmail:'',connectedAt:'',pendingAt:''};
 let googleConnectionIssue='';
 let lastFirebaseBackupAt='',lastFirebaseBackupReason='';
 
@@ -456,9 +464,9 @@ async function resetPassword(){if(!cloudAuth)return showToast('Firebase sin conf
 async function logout(){if(cloudAuth)await cloudAuth.signOut();currentBusinessId=null;currentUser=null;showOnly('authScreen')}
 
 function protectionOnboardingKey(){return PROTECTION_ONBOARDING_KEY+(currentUser?.id||'guest')}
-function showProtectionOnboarding(){if(!currentUser||localStorage.getItem(protectionOnboardingKey())==='1')return;localStorage.setItem(protectionOnboardingKey(),'1');$('modalTitle').textContent='Protege tu información';$('modalContent').innerHTML=`<div class="onboarding-protection"><div class="onboarding-lock"><svg viewBox="0 0 24 24"><path d="M12 3 5 6v5c0 4.6 2.8 8.2 7 10 4.2-1.8 7-5.4 7-10V6l-7-3Z"/><path d="m9 12 2 2 4-4"/></svg></div><div class="onboarding-lead"><b>Tu primer negocio ya está listo.</b><br>NEXA protegerá la información automáticamente. Para tener una segunda copia fuera de la app, conecta Google Sheets.</div><div class="onboarding-step"><div class="step-dot">✓</div><div><b>Guardado automático en Firebase</b><span>Cada cliente, préstamo y pago se guarda en la nube.</span></div></div><div class="onboarding-step"><div class="step-dot">✓</div><div><b>Copia diaria automática</b><span>Se crea al entrar a la app; también hacemos copia antes de eliminaciones.</span></div></div><div class="onboarding-step pending"><div class="step-dot">3</div><div><b>Conecta Google Sheets</b><span>Crea una segunda copia externa con negocios, clientes, préstamos y movimientos.</span></div></div><div class="onboarding-actions"><button class="secondary" type="button" data-action="onboarding-later">Hacerlo después</button><button class="primary" type="button" data-action="onboarding-google">Conectar Google ahora</button></div></div>`;showModal();if(cloudDb&&currentUser?.id)cloudDb.ref(cloudPath(currentUser.id,'settings/protectionOnboarding')).set({shown:true,shownAt:new Date().toISOString()}).catch(()=>{})}
+function showProtectionOnboarding(){if(!currentUser||localStorage.getItem(protectionOnboardingKey())==='1')return;localStorage.setItem(protectionOnboardingKey(),'1');$('modalTitle').textContent='Protege tu información';$('modalContent').innerHTML=`<div class="onboarding-protection"><div class="onboarding-lock"><svg viewBox="0 0 24 24"><path d="M12 3 5 6v5c0 4.6 2.8 8.2 7 10 4.2-1.8 7-5.4 7-10V6l-7-3Z"/><path d="m9 12 2 2 4-4"/></svg></div><div class="onboarding-lead"><b>Tu primer negocio ya está listo.</b><br>NEXA protegerá la información automáticamente. Para tener una segunda copia visible fuera de la app, conecta Google Sheets una sola vez.</div><div class="onboarding-step"><div class="step-dot">✓</div><div><b>Guardado automático en Firebase</b><span>Cada cliente, préstamo y pago se guarda en la nube.</span></div></div><div class="onboarding-step"><div class="step-dot">✓</div><div><b>Copia diaria automática</b><span>Se crea al entrar a la app; también hacemos copia antes de eliminaciones.</span></div></div><div class="onboarding-step pending"><div class="step-dot">3</div><div><b>Conecta Google Sheets</b><span>Crea y mantiene el mismo archivo con negocios, clientes, préstamos y movimientos.</span></div></div><div class="onboarding-actions"><button class="secondary" type="button" data-action="onboarding-later">Hacerlo después</button><button class="primary" type="button" data-action="onboarding-google">Conectar Google ahora</button></div></div>`;showModal();if(cloudDb&&currentUser?.id)cloudDb.ref(cloudPath(currentUser.id,'settings/protectionOnboarding')).set({shown:true,shownAt:new Date().toISOString()}).catch(()=>{})}
 function checkProtectionReminder(){if(!currentUser)return;const todayKey='NEXA_PROTECTION_REMINDER_'+currentUser.id+'_'+today();if(localStorage.getItem(todayKey))return;if(googleSheetsMeta.sheetId&&googleSheetsMeta.lastSyncAt){const age=(Date.now()-new Date(googleSheetsMeta.lastSyncAt).getTime())/86400000;if(age>=7){localStorage.setItem(todayKey,'1');setTimeout(()=>showToast('Google necesita una actualización','La última copia de Google Sheets tiene más de 7 días. En Configuración pulsa “Actualizar ahora”.','info'),1200)}}}
-function renderProtectionOverall(){const el=$('protectionOverallBadge');if(!el)return;const firebaseOk=$('cloudPill')?.classList.contains('ok'),googleOk=!!googleSheetsMeta.sheetId;if(firebaseOk&&googleOk){el.className='status-badge success';el.textContent='Protección completa'}else if(firebaseOk){el.className='status-badge warn';el.textContent='Protección básica'}else{el.className='status-badge error';el.textContent='Revisar nube'}}
+function renderProtectionOverall(){const el=$('protectionOverallBadge');if(!el)return;const firebaseOk=$('cloudPill')?.classList.contains('ok'),googleOk=!!googleSheetsMeta.sheetId;if(firebaseOk&&googleOk){el.className='status-badge success';el.textContent='Protección reforzada'}else if(firebaseOk){el.className='status-badge success';el.textContent='Protección activa'}else{el.className='status-badge error';el.textContent='Revisar Firebase'}}
 
 function openAfterLogin(){if(!currentUser)return;currentBusinessId=localStorage.getItem('NEXA_LAST_BUSINESS_'+currentUser.id)||null;if(!db.businesses.some(b=>b.id===currentBusinessId))currentBusinessId=null;if(currentBusinessId)openBusiness(currentBusinessId);else renderBusinessSelector()}
 function renderBusinessSelector(){showOnly('businessScreen');const grid=$('businessGrid');const businesses=[...db.businesses].sort((a,b)=>String(a.createdAt).localeCompare(String(b.createdAt)));const trash=`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M7 7l1 13h8l1-13"/><path d="M10 11v5M14 11v5"/></svg>`;grid.innerHTML=businesses.map((b,i)=>`<div class="business-row"><button class="business-card" type="button" data-open-business="${b.id}"><div class="business-icon">${i+1}</div><div><b>${esc(b.name)}</b><span>${businessClientCount(b.id)} cliente(s) · ${businessActiveLoanCount(b.id)} préstamo(s) activo(s)</span></div></button><button class="business-delete" type="button" data-delete-business="${b.id}" aria-label="Eliminar ${esc(b.name)}" title="Eliminar negocio">${trash}</button></div>`).join('')+`<div class="business-row"><button class="business-card add" type="button" data-action="create-business"><div class="business-icon">＋</div><div><b>Crear nuevo negocio</b><span>Agrega otro negocio independiente</span></div></button></div>`}
@@ -638,22 +646,141 @@ function downloadExcelBackup(){
   for(const [name,rows] of Object.entries(tables)){const ws=XLSX.utils.aoa_to_sheet(rows);ws['!cols']=rows[0].map((_,i)=>({wch:Math.min(34,Math.max(12,...rows.slice(0,80).map(r=>String(r[i]??'').length+2)))}));XLSX.utils.book_append_sheet(wb,ws,name.slice(0,31))}
   XLSX.writeFile(wb,`NEXA-CAPITAL-respaldo-${today()}.xlsx`);showToast('Excel descargado','Incluye todos los negocios y todos los años registrados.');
 }
-function googleSheetsConfigured(){return !!(cloudAuth&&window.firebase?.auth?.GoogleAuthProvider)}
-async function loadGoogleSheetsMeta(){googleSheetsMeta={sheetId:'',sheetUrl:'',lastSyncAt:'',googleConnected:false,googleEmail:''};if(!cloudDb||!currentUser?.id){renderGoogleSheetsState();return}try{const snap=await cloudDb.ref(cloudPath(currentUser.id,'settings/googleSheets')).once('value');googleSheetsMeta={...googleSheetsMeta,...(snap.val()||{})}}catch(e){console.warn('Google Sheets config:',e)}renderGoogleSheetsState()}
-async function persistGoogleSheetsMeta(){if(!cloudDb||!currentUser?.id)return;await cloudDb.ref(cloudPath(currentUser.id,'settings/googleSheets')).set(googleSheetsMeta)}
-function renderGoogleSheetsState(){const text=$('googleSheetsStateText'),btn=$('googleSheetsButton'),openBtn=$('googleSheetsOpenButton'),badge=$('googleSheetsBadge'),issue=$('googleSheetsIssue'),item=$('googleProtectionItem');if(!text||!btn)return;if(googleSheetsMeta.sheetId){text.textContent=`${googleSheetsMeta.googleEmail||'Cuenta Google'}${googleSheetsMeta.lastSyncAt?' · última copia '+new Date(googleSheetsMeta.lastSyncAt).toLocaleString('es-CO'):' · hoja creada'}`;btn.textContent=googleAccessToken?'Actualizar ahora':'Actualizar / reconectar';if(openBtn)openBtn.classList.remove('hidden');if(badge){badge.className='status-badge success';badge.textContent='Google conectado'}if(item)item.classList.add('connected');if(item)item.classList.remove('issue');if(issue){issue.classList.add('hidden');issue.textContent=''}}else{const linked=(cloudAuth?.currentUser?.providerData||[]).some(p=>p.providerId==='google.com');text.textContent=linked?'Cuenta Google vinculada. Falta crear o verificar la hoja de respaldo.':'Conecta una cuenta y NEXA creará “NEXA CAPITAL - Respaldo” automáticamente.';btn.textContent=linked?'Completar conexión':'Conectar Google';if(openBtn)openBtn.classList.add('hidden');if(badge){badge.className='status-badge '+(googleConnectionIssue?'error':'warn');badge.textContent=googleConnectionIssue?'Revisar':'Sin conectar'}if(item)item.classList.toggle('issue',!!googleConnectionIssue);if(item)item.classList.remove('connected');if(issue){issue.textContent=googleConnectionIssue;issue.classList.toggle('hidden',!googleConnectionIssue)}}renderProtectionOverall()}
-function googleProvider(){const provider=new firebase.auth.GoogleAuthProvider();for(const scope of GOOGLE_SHEETS_SCOPES)provider.addScope(scope);provider.setCustomParameters({prompt:'consent'});return provider}
-async function requestGoogleAccess(){
-  if(!googleSheetsConfigured())throw new Error('Google no está disponible en Firebase.');const user=cloudAuth.currentUser;if(!user)throw new Error('Inicia sesión nuevamente.');const provider=googleProvider();let result;
-  try{const linked=(user.providerData||[]).some(p=>p.providerId==='google.com');result=linked?await user.reauthenticateWithPopup(provider):await user.linkWithPopup(provider)}catch(e){if(e?.code==='auth/provider-already-linked')result=await user.reauthenticateWithPopup(provider);else if(e?.code==='auth/operation-not-allowed')throw new Error('Configuración del administrador pendiente: activa Google en Firebase Authentication → Método de acceso. Esto se hace una sola vez para todos los usuarios.');else if(e?.code==='auth/popup-blocked')throw new Error('El navegador bloqueó la ventana de Google. Permite ventanas emergentes e inténtalo otra vez.');else if(e?.code==='auth/unauthorized-domain')throw new Error(`Configuración del administrador pendiente: agrega ${location.hostname} en Firebase Authentication → Dominios autorizados.`);else throw e}
-  const cred=result?.credential||firebase.auth.GoogleAuthProvider.credentialFromResult?.(result);googleAccessToken=cred?.accessToken||'';if(!googleAccessToken)throw new Error('Google no entregó permiso para crear el respaldo.');const profile=(result?.user?.providerData||[]).find(p=>p.providerId==='google.com');googleConnectionIssue='';googleSheetsMeta.googleConnected=true;googleSheetsMeta.googleEmail=profile?.email||result?.user?.email||'';await persistGoogleSheetsMeta();renderGoogleSheetsState();return googleAccessToken
+function googleSheetsConfigured(){
+  return !!(NEXA_GOOGLE_OAUTH_CLIENT_ID&&NEXA_GOOGLE_OAUTH_CLIENT_ID.includes('.apps.googleusercontent.com')&&!NEXA_GOOGLE_OAUTH_CLIENT_ID.startsWith('PEGA_AQUI'))
 }
-async function googleApi(url,options={}){const res=await fetch(url,{...options,headers:{Authorization:`Bearer ${googleAccessToken}`,'Content-Type':'application/json',...(options.headers||{})}}),data=await res.json().catch(()=>({}));if(!res.ok){if(res.status===401)googleAccessToken='';const raw=data?.error?.message||`Google API ${res.status}`,low=raw.toLowerCase();if(low.includes('has not been used')||low.includes('disabled')||low.includes('accessnotconfigured'))throw new Error('Configuración del administrador pendiente: habilita Google Sheets API y Google Drive API en Google Cloud para el proyecto NEXA.');if(res.status===403&&low.includes('permission'))throw new Error('Google no dio todos los permisos necesarios. Vuelve a conectar la cuenta y acepta acceso a Sheets y Drive.');throw new Error(raw)}return data}
-async function ensureGoogleSpreadsheet(){if(googleSheetsMeta.sheetId)return googleSheetsMeta.sheetId;const names=Object.keys(backupTables());const created=await googleApi('https://sheets.googleapis.com/v4/spreadsheets',{method:'POST',body:JSON.stringify({properties:{title:'NEXA CAPITAL - Respaldo'},sheets:names.map((name,index)=>({properties:{title:name,index}}))})});googleSheetsMeta.sheetId=created.spreadsheetId||'';googleSheetsMeta.sheetUrl=created.spreadsheetUrl||(`https://docs.google.com/spreadsheets/d/${created.spreadsheetId}`);await persistGoogleSheetsMeta();return googleSheetsMeta.sheetId}
-async function syncGoogleSheetsNow(showResult=true){if(!googleAccessToken)return false;try{const sheetId=await ensureGoogleSpreadsheet(),tables=backupTables(),names=Object.keys(tables),ranges=names.map(n=>`'${n.replace(/'/g,"''")}'!A:Z`);await googleApi(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values:batchClear`,{method:'POST',body:JSON.stringify({ranges})});const data=names.map(n=>({range:`'${n.replace(/'/g,"''")}'!A1`,majorDimension:'ROWS',values:tables[n]}));await googleApi(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values:batchUpdate`,{method:'POST',body:JSON.stringify({valueInputOption:'USER_ENTERED',data})});googleSheetsMeta.lastSyncAt=new Date().toISOString();await persistGoogleSheetsMeta();renderGoogleSheetsState();if(showResult)showToast('Respaldo de Google actualizado','Negocios, clientes, préstamos y movimientos quedaron sincronizados.');return true}catch(e){console.error('Google Sheets:',e);googleConnectionIssue=e.message||'Vuelve a conectar Google.';renderGoogleSheetsState();if(showResult)showToast('No se pudo actualizar Google Sheets',googleConnectionIssue,'bad');return false}}
-async function googleSheetsSync(){try{googleConnectionIssue='';renderGoogleSheetsState();if(!googleAccessToken)await requestGoogleAccess();const ok=await syncGoogleSheetsNow(true);if(ok){googleConnectionIssue='';renderGoogleSheetsState()}}catch(e){console.error('Google connect:',e);googleConnectionIssue=e.message||'Revisa el acceso de Google.';renderGoogleSheetsState();const adminPending=/Configuración del administrador pendiente/i.test(googleConnectionIssue);showToast(adminPending?'Google pendiente':'No se pudo conectar Google',adminPending?'Revisa el aviso en Protección de datos.':googleConnectionIssue,'bad')}}
+async function loadGoogleSheetsMeta(){
+  googleSheetsMeta={sheetId:'',sheetUrl:'',lastSyncAt:'',googleConnected:false,googleEmail:'',connectedAt:'',pendingAt:''};
+  if(!cloudDb||!currentUser?.id){renderGoogleSheetsState();return}
+  try{const snap=await cloudDb.ref(cloudPath(currentUser.id,'settings/googleSheets')).once('value');googleSheetsMeta={...googleSheetsMeta,...(snap.val()||{})}}catch(e){console.warn('Google Sheets config:',e)}
+  renderGoogleSheetsState()
+}
+async function persistGoogleSheetsMeta(){
+  if(!cloudDb||!currentUser?.id)return;
+  await cloudDb.ref(cloudPath(currentUser.id,'settings/googleSheets')).set({
+    sheetId:googleSheetsMeta.sheetId||'',sheetUrl:googleSheetsMeta.sheetUrl||'',lastSyncAt:googleSheetsMeta.lastSyncAt||'',
+    googleConnected:!!googleSheetsMeta.googleConnected,googleEmail:googleSheetsMeta.googleEmail||'',connectedAt:googleSheetsMeta.connectedAt||'',pendingAt:googleSheetsMeta.pendingAt||''
+  })
+}
+function renderGoogleSheetsState(){
+  const text=$('googleSheetsStateText'),btn=$('googleSheetsButton'),openBtn=$('googleSheetsOpenButton'),badge=$('googleSheetsBadge'),issue=$('googleSheetsIssue'),item=$('googleProtectionItem'),optional=$('googleSheetsOptional');
+  if(!text||!btn)return;
+  if(!googleSheetsConfigured()){
+    text.textContent='La conexión directa con Google está preparada. Falta el OAuth Client ID de NEXA.';
+    btn.textContent='Falta configuración';btn.disabled=true;
+    if(badge){badge.className='status-badge';badge.textContent='Administrador'}
+    if(item){item.classList.add('issue');item.classList.remove('connected')}
+    if(issue){issue.textContent=`Configuración única: crea un OAuth Client ID web para NEXA y autoriza ${location.origin}. No necesitas activar Google en Firebase Authentication.`;issue.classList.remove('hidden')}
+    if(optional)optional.textContent='Firebase + copia diaria automática siguen activos mientras terminas esta configuración.';
+    if(openBtn)openBtn.classList.add('hidden');renderProtectionOverall();return
+  }
+  btn.disabled=false;
+  if(googleSheetsMeta.sheetId){
+    const pending=!!googleSheetsMeta.pendingAt;
+    if(googleAccessToken){
+      text.textContent=`Cuenta Google conectada${googleSheetsMeta.lastSyncAt?' · última copia '+new Date(googleSheetsMeta.lastSyncAt).toLocaleString('es-CO'):' · lista para la primera copia'}`;
+      btn.textContent=pending?'Sincronizar ahora':'Actualizar ahora';
+      if(badge){badge.className='status-badge success';badge.textContent=pending?'Cambios pendientes':'Google conectado'}
+      if(optional)optional.textContent=pending?'Hay cambios guardados en Firebase pendientes de copiar a Google Sheets.':'Sincronización en vivo activa durante esta sesión.';
+    }else{
+      text.textContent=`Hoja vinculada${googleSheetsMeta.lastSyncAt?' · última copia '+new Date(googleSheetsMeta.lastSyncAt).toLocaleString('es-CO'):''}. Autoriza Google para continuar la sincronización de esta sesión.`;
+      btn.textContent='Reconectar Google';
+      if(badge){badge.className='status-badge';badge.textContent=pending?'Pendiente':'Vinculado'}
+      if(optional)optional.textContent='El archivo sigue existiendo en tu Google Drive. Firebase continúa guardando aunque Google necesite reconexión.';
+    }
+    if(openBtn)openBtn.classList.remove('hidden');
+    if(item){item.classList.add('connected');item.classList.toggle('issue',pending);item.classList.remove('optional')}
+    if(issue){issue.classList.add('hidden');issue.textContent=''}
+  }else{
+    text.textContent='Conecta una cuenta de Google y NEXA creará “NEXA CAPITAL - Respaldo” automáticamente.';
+    btn.textContent='Conectar Google';
+    if(badge){badge.className='status-badge';badge.textContent='Sin conectar'}
+    if(item){item.classList.remove('connected','issue');item.classList.add('optional')}
+    if(issue){issue.textContent=googleConnectionIssue||'';issue.classList.toggle('hidden',!googleConnectionIssue)}
+    if(optional)optional.textContent='Después de conectarlo, cada cambio se enviará al mismo archivo mientras Google esté autorizado.';
+    if(openBtn)openBtn.classList.add('hidden');
+  }
+  renderProtectionOverall()
+}
+function requestGoogleAccess(){
+  return new Promise((resolve,reject)=>{
+    if(!googleSheetsConfigured())return reject(new Error('Falta configurar el OAuth Client ID web de NEXA.'));
+    if(!window.google?.accounts?.oauth2)return reject(new Error('Google todavía no terminó de cargar. Espera unos segundos e inténtalo otra vez.'));
+    try{
+      googleSheetsTokenClient=google.accounts.oauth2.initTokenClient({
+        client_id:NEXA_GOOGLE_OAUTH_CLIENT_ID,
+        scope:NEXA_GOOGLE_SCOPES,
+        callback:(resp)=>{
+          if(resp?.error)return reject(new Error(resp.error_description||resp.error));
+          googleAccessToken=resp?.access_token||'';
+          if(!googleAccessToken)return reject(new Error('Google no entregó autorización.'));
+          googleConnectionIssue='';
+          googleSheetsMeta.googleConnected=true;
+          googleSheetsMeta.connectedAt=googleSheetsMeta.connectedAt||new Date().toISOString();
+          persistGoogleSheetsMeta().catch(()=>{});
+          renderGoogleSheetsState();resolve(googleAccessToken)
+        }
+      });
+      googleSheetsTokenClient.requestAccessToken({prompt:googleAccessToken?'':'consent'})
+    }catch(e){reject(e)}
+  })
+}
+async function googleApi(url,options={}){
+  if(!googleAccessToken)throw new Error('Autoriza Google para continuar la sincronización.');
+  const headers={...(options.headers||{}),Authorization:`Bearer ${googleAccessToken}`};
+  if(options.body&&!headers['Content-Type'])headers['Content-Type']='application/json';
+  const res=await fetch(url,{...options,headers});
+  const data=await res.json().catch(()=>({}));
+  if(!res.ok){
+    if(res.status===401){googleAccessToken='';throw new Error('La autorización de Google venció. Pulsa “Reconectar Google”.')}
+    const raw=data?.error?.message||`Google API ${res.status}`,low=raw.toLowerCase();
+    if(low.includes('has not been used')||low.includes('disabled')||low.includes('accessnotconfigured'))throw new Error('Habilita Google Sheets API en el proyecto de Google Cloud de NEXA.');
+    if(low.includes('origin')||low.includes('redirect_uri_mismatch')||low.includes('unauthorized_client'))throw new Error(`Autoriza ${location.origin} en el OAuth Client ID web de NEXA.`);
+    if(res.status===403&&low.includes('permission'))throw new Error('Google no concedió el permiso necesario. Vuelve a conectar y acepta el acceso al archivo de respaldo.');
+    throw new Error(raw)
+  }
+  return data
+}
+async function ensureGoogleSpreadsheet(){
+  if(googleSheetsMeta.sheetId)return googleSheetsMeta.sheetId;
+  const names=Object.keys(backupTables());
+  const created=await googleApi('https://sheets.googleapis.com/v4/spreadsheets',{method:'POST',body:JSON.stringify({properties:{title:'NEXA CAPITAL - Respaldo'},sheets:names.map((name,index)=>({properties:{title:name,index}}))})});
+  googleSheetsMeta.sheetId=created.spreadsheetId||'';
+  googleSheetsMeta.sheetUrl=created.spreadsheetUrl||(`https://docs.google.com/spreadsheets/d/${created.spreadsheetId}/edit`);
+  googleSheetsMeta.googleConnected=true;googleSheetsMeta.connectedAt=googleSheetsMeta.connectedAt||new Date().toISOString();
+  await persistGoogleSheetsMeta();return googleSheetsMeta.sheetId
+}
+async function syncGoogleSheetsNow(showResult=true){
+  if(googleSheetsSyncInFlight)return false;
+  if(!googleAccessToken){if(showResult)showToast('Google necesita autorización','Pulsa “Reconectar Google” para continuar la copia en vivo.','info');return false}
+  googleSheetsSyncInFlight=true;
+  try{
+    const sheetId=await ensureGoogleSpreadsheet(),tables=backupTables(),names=Object.keys(tables),ranges=names.map(n=>`'${n.replace(/'/g,"''")}'!A:Z`);
+    await googleApi(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values:batchClear`,{method:'POST',body:JSON.stringify({ranges})});
+    const data=names.map(n=>({range:`'${n.replace(/'/g,"''")}'!A1`,majorDimension:'ROWS',values:tables[n]}));
+    await googleApi(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values:batchUpdate`,{method:'POST',body:JSON.stringify({valueInputOption:'USER_ENTERED',data})});
+    googleSheetsMeta.lastSyncAt=new Date().toISOString();googleSheetsMeta.pendingAt='';googleSheetsMeta.googleConnected=true;
+    await persistGoogleSheetsMeta();googleConnectionIssue='';renderGoogleSheetsState();
+    if(showResult)showToast('Google Sheets actualizado','El mismo archivo “NEXA CAPITAL - Respaldo” quedó actualizado.');return true
+  }catch(e){
+    console.error('Google Sheets:',e);googleConnectionIssue=e.message||'Vuelve a conectar Google.';googleSheetsMeta.pendingAt=googleSheetsMeta.pendingAt||new Date().toISOString();
+    await persistGoogleSheetsMeta().catch(()=>{});renderGoogleSheetsState();if(showResult)showToast('No se pudo actualizar Google Sheets',googleConnectionIssue,'bad');return false
+  }finally{googleSheetsSyncInFlight=false}
+}
+async function googleSheetsSync(){
+  try{
+    googleConnectionIssue='';renderGoogleSheetsState();
+    if(!googleAccessToken)await requestGoogleAccess();
+    const ok=await syncGoogleSheetsNow(true);if(ok){googleConnectionIssue='';renderGoogleSheetsState()}
+  }catch(e){console.error('Google connect:',e);googleConnectionIssue=e.message||'Revisa la autorización de Google.';renderGoogleSheetsState();showToast('No se pudo conectar Google',googleConnectionIssue,'bad')}
+}
 function openGoogleSheet(){if(!googleSheetsMeta.sheetUrl)return showToast('Todavía no hay hoja de respaldo','Conecta Google primero.','bad');window.open(googleSheetsMeta.sheetUrl,'_blank','noopener')}
-function queueGoogleSheetsSync(){if(!googleAccessToken||!googleSheetsMeta.sheetId)return;clearTimeout(googleSheetsSyncTimer);googleSheetsSyncTimer=setTimeout(()=>syncGoogleSheetsNow(false),2500)}
+function queueGoogleSheetsSync(){
+  if(!googleSheetsMeta.sheetId)return;
+  googleSheetsMeta.pendingAt=new Date().toISOString();persistGoogleSheetsMeta().catch(()=>{});renderGoogleSheetsState();
+  if(!googleAccessToken)return;
+  clearTimeout(googleSheetsSyncTimer);googleSheetsSyncTimer=setTimeout(()=>syncGoogleSheetsNow(false),900)
+}
 
 function downloadBackup(){const blob=new Blob([JSON.stringify({exportedAt:new Date().toISOString(),user:currentUser?.email||'',data:appState()},null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`nexa-capital-respaldo-${today()}.json`;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);showToast('Respaldo descargado','Guárdalo en un lugar seguro.')}
 
@@ -684,7 +811,7 @@ function bindEvents(){
     const backClient=e.target.closest('[data-back-client]');if(backClient)openClientDetail(backClient.dataset.backClient);
     const hist=e.target.closest('[data-loan-history]');if(hist)openLoanHistory(hist.dataset.loanHistory);
   });
-  $('loanAmount').addEventListener('input',e=>{formatMoneyField(e.target);updateLoanCalc()});$('loanRate').addEventListener('input',updateLoanCalc);$('loanClientPhone').addEventListener('input',updateExistingClientNote);$('loanClientName').addEventListener('blur',updateExistingClientNote);$('loanStartDate').addEventListener('change',()=>{if(!$('loanFirstDue').value||$('loanFirstDue').value<=$('loanStartDate').value)$('loanFirstDue').value=addMonthsISO($('loanStartDate').value,1)});$('homeSearch').addEventListener('input',()=>renderSearchResults('homeSearchResults',$('homeSearch').value.trim()));$('clientSearch').addEventListener('input',renderClients);$('collectionSearch').addEventListener('input',renderCollections);$('clientYear').addEventListener('change',renderClients);$('historyYear').addEventListener('change',renderHistory);$('modal').addEventListener('click',e=>{if(e.target===$('modal'))closeModal()});document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.activeElement?.id==='businessNameInput'){e.preventDefault();saveBusinessName()}});window.addEventListener('online',()=>cloudSaveNow(false));document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&currentUser){cloudSaveNow(false);checkProtectionReminder()}});
+  $('loanAmount').addEventListener('input',e=>{formatMoneyField(e.target);updateLoanCalc()});$('loanRate').addEventListener('input',updateLoanCalc);$('loanClientPhone').addEventListener('input',updateExistingClientNote);$('loanClientName').addEventListener('blur',updateExistingClientNote);$('loanStartDate').addEventListener('change',()=>{if(!$('loanFirstDue').value||$('loanFirstDue').value<=$('loanStartDate').value)$('loanFirstDue').value=addMonthsISO($('loanStartDate').value,1)});$('homeSearch').addEventListener('input',()=>renderSearchResults('homeSearchResults',$('homeSearch').value.trim()));$('clientSearch').addEventListener('input',renderClients);$('collectionSearch').addEventListener('input',renderCollections);$('clientYear').addEventListener('change',renderClients);$('historyYear').addEventListener('change',renderHistory);$('modal').addEventListener('click',e=>{if(e.target===$('modal'))closeModal()});document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.activeElement?.id==='businessNameInput'){e.preventDefault();saveBusinessName()}});window.addEventListener('online',()=>{cloudSaveNow(false);if(googleAccessToken&&googleSheetsMeta.sheetId&&googleSheetsMeta.pendingAt)syncGoogleSheetsNow(false)});document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&currentUser){cloudSaveNow(false);checkProtectionReminder();if(googleAccessToken&&googleSheetsMeta.sheetId&&googleSheetsMeta.pendingAt)syncGoogleSheetsNow(false)}else if(document.visibilityState==='hidden'&&currentUser){cloudSaveNow(false);if(googleAccessToken&&googleSheetsMeta.sheetId&&googleSheetsMeta.pendingAt)syncGoogleSheetsNow(false)}});
 }
 
 bindEvents();
