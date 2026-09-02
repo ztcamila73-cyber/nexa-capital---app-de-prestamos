@@ -370,6 +370,159 @@ body.modal-open{overflow:hidden!important;touch-action:none}
   .collection-actions .primary,.collection-actions .secondary{font-size:10px!important}
 }
 
+
+
+/* ===== NEXA v12 · corrección visual definitiva móvil/escritorio ===== */
+.build-version{display:inline-flex;align-items:center;margin-left:5px;padding:2px 6px;border-radius:999px;background:#EEF2F6;color:#475467;font-size:9px;font-weight:850;vertical-align:middle}
+
+/* Configuración: evita tarjetas estiradas y deja Protección de datos con ancho útil. */
+@media(min-width:980px){
+  .more-grid{grid-template-columns:minmax(0,.88fr) minmax(0,1.12fr)!important;grid-template-areas:"business protection" "account protection"!important;align-items:start!important;gap:14px!important}
+  .business-management-card{grid-area:business!important;height:auto!important;align-self:start!important}
+  .protection-card{grid-area:protection!important;height:auto!important;align-self:start!important}
+  .account-card{grid-area:account!important;height:auto!important;align-self:start!important}
+  .google-protection{grid-template-columns:38px minmax(0,1fr)!important;align-items:start!important}
+  .google-protection>.protection-actions{grid-column:2!important;justify-content:flex-start!important;margin-top:4px!important}
+  .google-protection .google-issue{max-width:620px!important}
+}
+
+/* Modal: la cabecera nunca se desplaza; solamente se mueve el contenido. */
+.modal-card{display:flex!important;flex-direction:column!important;overflow:hidden!important}
+.modal-head{position:relative!important;top:auto!important;z-index:30!important;flex:0 0 auto!important;background:#fff!important;border-bottom:1px solid #EEF1F4!important}
+#modalContent{flex:1 1 auto!important;min-height:0!important;overflow-y:auto!important;overflow-x:hidden!important;overscroll-behavior:contain!important;-webkit-overflow-scrolling:touch!important}
+.close{position:relative!important;z-index:35!important;flex:0 0 auto!important}
+.delete-warning{margin-bottom:10px!important}.delete-summary{margin-bottom:10px!important}.delete-confirm-text{padding:10px 2px 12px;color:#475467;font-size:11px;line-height:1.4;font-weight:700}
+
+@media(max-width:620px){
+  /* Modal ocupa la pantalla útil y la X permanece arriba incluso al llegar al final del préstamo. */
+  .modal{align-items:flex-end!important;padding:0!important}
+  .modal-card{height:min(94dvh,760px)!important;max-height:94dvh!important;padding:0!important;border-radius:22px 22px 0 0!important}
+  .modal-head{min-height:58px!important;padding:11px 12px 9px!important;margin:0!important;box-shadow:0 1px 0 #EEF1F4!important}
+  .modal-head h2{font-size:19px!important;line-height:1.15!important;min-width:0!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+  .close{width:36px!important;height:36px!important;min-width:36px!important;border-radius:50%!important;background:#F1F3F5!important;display:grid!important;place-items:center!important;padding:0!important}
+  #modalContent{padding:11px 12px calc(22px + env(safe-area-inset-bottom))!important}
+
+  /* Cliente: información arriba y botones 2x2 debajo, sin quedar apretados. */
+  .client-item{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:10px!important;padding:12px!important}
+  .client-main{width:100%!important;min-width:0!important}
+  .client-actions{width:100%!important;display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:6px!important;justify-content:stretch!important}
+  .client-actions .mini-btn{width:100%!important;min-width:0!important;min-height:34px!important;padding:7px 5px!important;border-radius:10px!important;font-size:10px!important;white-space:nowrap!important}
+  .client-actions .delete-client{grid-column:1!important}.client-actions [data-new-loan-client]{grid-column:2!important}
+
+  /* Filtros de Clientes y Cobros caben completos en cualquier iPhone. */
+  .tabs{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:6px!important;width:100%!important;overflow:visible!important}
+  .tab{width:100%!important;min-width:0!important;max-width:100%!important;padding:8px 5px!important;font-size:9.5px!important;text-overflow:ellipsis!important;overflow:hidden!important}
+  #clientYearWrap{width:100%!important}
+
+  /* Google Sheets: nunca comprime el mensaje ni mezcla exportaciones manuales. */
+  .google-protection{grid-template-columns:32px minmax(0,1fr)!important;align-items:start!important}
+  .google-protection>.protection-actions{grid-column:2!important;width:100%!important;display:flex!important;justify-content:flex-start!important;gap:6px!important;margin-top:5px!important}
+  .google-protection .protection-title,.google-protection .protection-sub,.google-protection .google-issue,.google-protection .google-optional{overflow-wrap:anywhere!important;word-break:normal!important}
+  .google-protection .protection-actions .mini-btn{min-height:34px!important;padding:7px 9px!important;font-size:10px!important}
+
+  /* Menú inferior: pequeño y fuera del contenido. */
+  .main-app{padding-bottom:92px!important}
+  .bottom-nav{left:7px!important;right:7px!important;bottom:7px!important;max-width:500px!important;padding:5px!important;border-radius:18px!important}
+  .nav-btn,.nav-btn.center{min-height:44px!important;font-size:7.7px!important;padding:4px 0!important;gap:2px!important}
+  .nav-btn .nav-icon svg,.nav-btn.center .nav-icon svg{width:15px!important;height:15px!important}
+}
+
+@media(max-width:360px){
+  .client-actions .mini-btn{font-size:9.5px!important}
+  .tab{font-size:9px!important}
+}
+
+
+
+/* ===== NEXA v12 · consolidación final responsive ===== */
+/* No agregar estilos después de </html>. Todo ajuste visual vive dentro de este bloque. */
+
+/* Protección de datos: contenido legible y acciones separadas del texto. */
+.protection-card,.protection-list,.protection-item{min-width:0}
+.protection-item>div:nth-child(2){min-width:0}
+.google-protection .google-issue,
+.google-protection .google-optional,
+.google-protection .protection-sub{max-width:100%;overflow-wrap:break-word;word-break:normal}
+
+@media(min-width:980px){
+  .more-grid{
+    display:grid!important;
+    grid-template-columns:minmax(320px,.82fr) minmax(520px,1.18fr)!important;
+    grid-template-areas:"business protection" "account protection"!important;
+    align-items:start!important;gap:14px!important
+  }
+  .business-management-card{grid-area:business!important}
+  .account-card{grid-area:account!important}
+  .protection-card{grid-area:protection!important}
+  .protection-item{grid-template-columns:38px minmax(0,1fr) auto!important}
+  .google-protection{grid-template-columns:38px minmax(0,1fr)!important}
+  .google-protection>.protection-actions{
+    grid-column:2!important;width:100%!important;justify-content:flex-start!important;
+    margin-top:7px!important
+  }
+  .google-protection .google-issue{max-width:680px!important}
+}
+
+/* Modal: la X nunca se desplaza. Solo #modalContent tiene scroll. */
+.modal-card{overflow:hidden!important;display:flex!important;flex-direction:column!important}
+.modal-head{flex:0 0 auto!important;position:relative!important;z-index:50!important;background:#fff!important}
+#modalContent{flex:1 1 auto!important;min-height:0!important;overflow:auto!important;overscroll-behavior:contain!important;-webkit-overflow-scrolling:touch!important}
+.close{flex:0 0 auto!important;position:relative!important;z-index:60!important}
+
+@media(max-width:620px){
+  .modal{align-items:flex-end!important;padding:0!important}
+  .modal-card{
+    width:100%!important;max-width:none!important;height:94dvh!important;max-height:94dvh!important;
+    border-radius:22px 22px 0 0!important;padding:0!important
+  }
+  .modal-head{
+    min-height:58px!important;margin:0!important;padding:11px 12px 9px!important;
+    border-bottom:1px solid #EAECF0!important;box-shadow:0 1px 4px rgba(16,24,40,.04)!important
+  }
+  .modal-head h2{font-size:19px!important;min-width:0!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+  .close{width:36px!important;height:36px!important;min-width:36px!important;border-radius:50%!important;background:#F2F4F7!important;padding:0!important;display:grid!important;place-items:center!important}
+  #modalContent{padding:12px 12px calc(24px + env(safe-area-inset-bottom))!important}
+
+  /* Cliente: ficha clara y botones 2 x 2, sin encogerse ni salir del teléfono. */
+  .client-item{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:10px!important;padding:12px!important}
+  .client-main{min-width:0!important;width:100%!important}
+  .client-actions{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:7px!important;width:100%!important}
+  .client-actions .mini-btn{width:100%!important;min-width:0!important;min-height:35px!important;padding:7px 5px!important;font-size:10px!important;white-space:nowrap!important}
+  .client-manage-row{display:grid!important;grid-template-columns:1fr 1fr!important;gap:7px!important}
+  .client-manage-row .mini-btn{width:100%!important;min-width:0!important;min-height:35px!important}
+
+  .loan-actions{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:7px!important}
+  .loan-actions .mini-btn{width:100%!important;min-width:0!important;min-height:36px!important;font-size:9.8px!important;padding:7px 4px!important}
+  .loan-actions .mini-btn:last-child:nth-child(odd){grid-column:1/-1!important}
+
+  /* Filtros de Clientes/Cobros en 2 columnas; nunca desbordan horizontalmente. */
+  .tabs{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:6px!important;width:100%!important;overflow:visible!important;padding:0!important}
+  .tab{width:100%!important;min-width:0!important;max-width:100%!important;padding:8px 5px!important;font-size:9.5px!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+
+  /* Protección de datos móvil: icono + texto; controles debajo del texto. */
+  .protection-item{grid-template-columns:32px minmax(0,1fr)!important;gap:9px!important;align-items:start!important;padding:12px 10px!important}
+  .protection-icon{width:32px!important;height:32px!important;border-radius:10px!important}
+  .protection-item>.protection-actions{grid-column:2!important;width:100%!important;justify-content:flex-start!important;margin-top:4px!important;gap:6px!important}
+  .protection-actions .mini-btn{min-height:33px!important;padding:7px 8px!important;font-size:9.8px!important}
+  .protection-title{font-size:12px!important;line-height:1.25!important}
+  .protection-sub,.google-optional,.google-issue{font-size:10.5px!important;line-height:1.4!important}
+
+  /* Navegación inferior compacta y segura para iPhone. */
+  .main-app{padding-bottom:96px!important}
+  .bottom-nav{
+    left:7px!important;right:7px!important;bottom:calc(7px + env(safe-area-inset-bottom))!important;
+    width:auto!important;max-width:500px!important;margin:0 auto!important;padding:5px!important;border-radius:18px!important
+  }
+  .nav-btn,.nav-btn.center{min-width:0!important;min-height:44px!important;padding:4px 0!important;font-size:7.7px!important;gap:2px!important}
+  .nav-btn .nav-icon svg,.nav-btn.center .nav-icon svg{width:15px!important;height:15px!important}
+}
+
+@media(max-width:360px){
+  .client-actions .mini-btn,.loan-actions .mini-btn{font-size:9.2px!important}
+  .tab{font-size:9px!important}
+  .protection-actions .mini-btn{font-size:9.2px!important}
+}
+
 </style>
 </head>
 <body>
@@ -518,7 +671,7 @@ body.modal-open{overflow:hidden!important;touch-action:none}
     </section>
 
     <section id="page-settings" class="page">
-      <div class="page-title"><div><h1>Configuración</h1><p>Cuenta, protección de datos y copias de seguridad.</p></div></div>
+      <div class="page-title"><div><h1>Configuración</h1><p>Cuenta, protección de datos y copias de seguridad. <span class="build-version">NEXA v12</span></p></div></div>
       <div class="more-grid">
         <div class="card flat business-management-card">
           <div class="section-head"><h2>Negocio</h2></div>
@@ -535,14 +688,14 @@ body.modal-open{overflow:hidden!important;touch-action:none}
           <div class="protection-list">
             <div class="protection-item"><div class="protection-icon"><svg viewBox="0 0 24 24"><path d="M7 18h10a4 4 0 0 0 .7-7.9A6 6 0 0 0 6.2 9.2 4.5 4.5 0 0 0 7 18Z"/><path d="m9.5 13 1.7 1.7 3.5-3.5"/></svg></div><div><div class="protection-title">Firebase · guardado principal</div><div id="firebaseStateText" class="protection-sub">Comprobando conexión…</div></div><div class="protection-actions"><span id="firebaseProtectionBadge" class="status-badge">Revisando</span><button class="mini-btn" type="button" data-action="verify-cloud">Comprobar</button></div></div>
             <div class="protection-item"><div class="protection-icon"><svg viewBox="0 0 24 24"><path d="M12 3v12"/><path d="m8 11 4 4 4-4"/><path d="M5 18h14v3H5z"/></svg></div><div><div class="protection-title">Copia diaria automática</div><div id="firebaseBackupStateText" class="protection-sub">Se crea automáticamente al entrar a la app.</div></div><div class="protection-actions"><span id="firebaseBackupBadge" class="status-badge success">Automática</span><button class="mini-btn" type="button" data-action="cloud-backup">Crear ahora</button></div></div>
-            <div id="googleProtectionItem" class="protection-item google-protection optional"><div class="protection-icon"><svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h8M11 6v12M15 6v12"/></svg></div><div><div class="protection-title">Google Sheets · segunda copia en vivo</div><div id="googleSheetsStateText" class="protection-sub">Conecta tu cuenta una vez y NEXA mantendrá el mismo archivo actualizado mientras uses la app con Internet.</div><div id="googleSheetsIssue" class="google-issue hidden"></div><div id="googleSheetsOptional" class="google-optional">Cada cambio guardado en NEXA se copiará al mismo Google Sheet cuando Google esté autorizado.</div></div><div class="protection-actions"><span id="googleSheetsBadge" class="status-badge">Opcional</span><button id="googleSheetsButton" class="mini-btn" type="button" data-action="google-sheets-sync">Conectar Google</button><button id="googleSheetsOpenButton" class="mini-btn hidden" type="button" data-action="open-google-sheet">Abrir hoja</button></div></div>
+            <div id="googleProtectionItem" class="protection-item google-protection"><div class="protection-icon"><svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h8M11 6v12M15 6v12"/></svg></div><div><div class="protection-title">Google Sheets · segunda copia en vivo</div><div id="googleSheetsStateText" class="protection-sub">Conecta tu cuenta una vez y NEXA mantendrá el mismo archivo actualizado mientras uses la app con Internet.</div><div id="googleSheetsIssue" class="google-issue hidden"></div><div id="googleSheetsOptional" class="google-optional">Cada cambio guardado en NEXA se copiará al mismo Google Sheet cuando Google esté autorizado.</div></div><div class="protection-actions"><span id="googleSheetsBadge" class="status-badge">Sin conectar</span><button id="googleSheetsButton" class="mini-btn" type="button" data-action="google-sheets-sync">Conectar Google</button><button id="googleSheetsOpenButton" class="mini-btn hidden" type="button" data-action="open-google-sheet">Abrir hoja</button></div></div>
           </div>
           <details class="manual-backups"><summary>Copias manuales y exportaciones</summary><div class="manual-backup-body">
             <div class="manual-row"><div><b>Excel completo</b><span>Negocios, clientes, préstamos, cuotas y movimientos.</span></div><button class="mini-btn" type="button" data-action="download-excel">Descargar</button></div>
             <div class="manual-row"><div><b>Respaldo técnico JSON</b><span>Copia completa para recuperación técnica.</span></div><button class="mini-btn" type="button" data-action="download-backup">Descargar</button></div>
           </div></details>
         </div>
-        <div class="card flat">
+        <div class="card flat account-card">
           <div class="section-head"><h2>Cuenta</h2></div>
           <div class="setting-row"><div><div id="accountName" class="setting-title">—</div><div id="accountEmail" class="setting-sub">—</div></div></div>
           <button class="logout-settings full" type="button" data-action="logout">Cerrar sesión</button>
@@ -577,7 +730,7 @@ const NEXA_FIREBASE_CONFIG={
    CONFIGURACIÓN ÚNICA DEL ADMINISTRADOR:
    crea un OAuth Client ID tipo "Aplicación web" para NEXA y pégalo aquí.
    Agrega el dominio de Vercel en "Orígenes de JavaScript autorizados". */
-const NEXA_GOOGLE_OAUTH_CLIENT_ID="PEGA_AQUI_TU_CLIENT_ID.apps.googleusercontent.com";
+const NEXA_GOOGLE_OAUTH_CLIENT_ID="600139879243-daqofgrmd5m18v0qr35t618khfibuis6.apps.googleusercontent.com";
 // Alcance mínimo: solo archivos de Google Drive creados/usados por NEXA.
 const NEXA_GOOGLE_SCOPES="https://www.googleapis.com/auth/drive.file";
 
@@ -771,8 +924,8 @@ function clientItemHTML(c,compact=false){const loans=clientLoans(c.id),active=lo
 function openClientDetail(clientId){const c=getClient(clientId);if(!c)return;const loans=clientLoans(c.id),active=loans.filter(activeStatus),cancelled=loans.filter(l=>l.status==='cancelled');$('modalTitle').textContent=c.name;$('modalContent').innerHTML=`<div class="client-manage-row"><button class="mini-btn edit-client" type="button" data-edit-client="${c.id}">Editar cliente</button><button class="mini-btn delete-client" type="button" data-delete-client="${c.id}">Eliminar cliente</button></div><div class="notice info" style="margin-bottom:12px">Teléfono: ${esc(c.phone||'Sin teléfono')}<br>${loans.length} préstamo(s) registrados en este negocio.</div>${active.length?`<div class="section-head"><h2>Préstamo activo</h2></div><div class="loan-list">${active.map(loanCardHTML).join('')}</div>`:'<div class="notice good" style="margin-bottom:12px">No tiene préstamos activos.</div>'}<div class="section-head" style="margin-top:16px"><h2>Historial de préstamos</h2></div><div class="loan-list">${cancelled.length?cancelled.map(loanCardHTML).join(''):'<div class="empty">Todavía no tiene préstamos cancelados.</div>'}</div><button class="primary full" style="margin-top:14px" type="button" data-new-loan-client="${c.id}">Nuevo préstamo</button>`;showModal()}
 function openEditClientModal(clientId){const c=getClient(clientId);if(!c)return;$('modalTitle').textContent='Editar cliente';$('modalContent').innerHTML=`<div class="form-grid"><div class="fullcol"><label class="label">Nombre</label><input id="editClientName" class="input" maxlength="80" value="${esc(c.name)}" placeholder="Nombre del cliente"></div><div class="fullcol"><label class="label">Teléfono</label><input id="editClientPhone" class="input" inputmode="tel" maxlength="30" value="${esc(c.phone||'')}" placeholder="Número de teléfono"></div><div class="fullcol notice info">Los préstamos e historial no cambian. Solo se actualizan los datos de la ficha del cliente.</div><div class="fullcol" style="display:flex;gap:9px;justify-content:flex-end"><button class="secondary" type="button" data-client-detail="${c.id}">Cancelar</button><button class="primary" type="button" data-save-client="${c.id}">Guardar cambios</button></div></div>`;showModal();setTimeout(()=>$('editClientName')?.focus(),30)}
 function saveClientChanges(clientId){const c=getClient(clientId);if(!c)return;const name=$('editClientName')?.value.trim(),phone=$('editClientPhone')?.value.trim();if(!name||!phone)return showToast('Faltan datos','Nombre y teléfono son obligatorios.','bad');const duplicate=businessClients().find(x=>x.id!==clientId&&normalizePhone(x.phone)===normalizePhone(phone));if(duplicate)return showToast('Teléfono ya registrado',`Ese número pertenece a ${duplicate.name}.`,'bad');c.name=name;c.phone=phone;c.updatedAt=new Date().toISOString();saveLocal();refreshAll();showToast('Cliente actualizado',`${c.name} quedó actualizado.`);openClientDetail(c.id)}
-function openDeleteClientConfirm(clientId){const c=getClient(clientId);if(!c)return;const loans=clientLoans(c.id),active=loans.filter(activeStatus);$('modalTitle').textContent='Eliminar cliente';$('modalContent').innerHTML=`<div class="notice warn" style="margin-bottom:12px"><b>Se eliminará la ficha y todo su historial de este negocio.</b><br>Antes de borrar, NEXA creará una copia de seguridad en Firebase.</div><div class="loan-summary" style="margin-bottom:12px"><div><span>Cliente</span><b>${esc(c.name)}</b></div><div><span>Préstamos</span><b>${loans.length}</b></div><div><span>Activos</span><b>${active.length}</b></div><div><span>Teléfono</span><b>${esc(c.phone||'—')}</b></div></div><label class="label">Para confirmar, escribe el nombre del cliente</label><input id="deleteClientName" class="input" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="${esc(c.name)}"><div class="confirm-actions"><button class="secondary" type="button" data-client-detail="${c.id}">Cancelar</button><button class="danger" type="button" data-confirm-delete-client="${c.id}">Eliminar cliente</button></div>`;showModal()}
-async function deleteClient(clientId){const c=getClient(clientId);if(!c)return;const typed=$('deleteClientName')?.value||'';if(normalizeName(typed)!==normalizeName(c.name))return showToast('Nombre no coincide','Escribe el nombre del cliente para eliminarlo.','bad');try{await cloudBackup('antes de eliminar cliente',false)}catch(e){console.warn('Backup antes de eliminar cliente:',e)}db.movements=db.movements.filter(x=>x.clientId!==clientId);db.loans=db.loans.filter(x=>x.clientId!==clientId);db.clients=db.clients.filter(x=>x.id!==clientId);saveLocal();closeModal();refreshAll();await cloudSaveNow(false);showToast('Cliente eliminado','La copia de seguridad anterior quedó conservada en Firebase.')}
+function openDeleteClientConfirm(clientId){const c=getClient(clientId);if(!c)return;const loans=clientLoans(c.id),active=loans.filter(activeStatus);$('modalTitle').textContent='Eliminar cliente';$('modalContent').innerHTML=`<div class="notice warn delete-warning"><b>Vas a eliminar a ${esc(c.name)}.</b><br>Se borrará su ficha, préstamos y movimientos de este negocio. Antes de continuar, NEXA guardará una copia de seguridad en Firebase.</div><div class="loan-summary delete-summary"><div><span>Cliente</span><b>${esc(c.name)}</b></div><div><span>Préstamos</span><b>${loans.length}</b></div><div><span>Activos</span><b>${active.length}</b></div><div><span>Teléfono</span><b>${esc(c.phone||'—')}</b></div></div><div class="delete-confirm-text">Confirma únicamente si realmente quieres eliminar este cliente.</div><div class="confirm-actions"><button class="secondary" type="button" data-client-detail="${c.id}">Cancelar</button><button class="danger" type="button" data-confirm-delete-client="${c.id}">Sí, eliminar cliente</button></div>`;showModal()}
+async function deleteClient(clientId){const c=getClient(clientId);if(!c)return;const backupOk=await cloudBackup('antes de eliminar cliente',false);if(!backupOk)return showToast('No se eliminó el cliente','No se pudo crear la copia de seguridad en Firebase. Revisa Internet e inténtalo otra vez.','bad');db.movements=db.movements.filter(x=>x.clientId!==clientId);db.loans=db.loans.filter(x=>x.clientId!==clientId);db.clients=db.clients.filter(x=>x.id!==clientId);saveLocal();closeModal();refreshAll();const cloudOk=await cloudSaveNow(false);if(!cloudOk)return showToast('Cliente eliminado localmente','Firebase quedó pendiente de sincronizar. No cierres la app hasta recuperar Internet.','bad');showToast('Cliente eliminado','La copia anterior quedó guardada en Firebase.')}
 function loanCardHTML(l){const p=earliestOpenPeriod(l),quota=loanCurrentQuota(l),cls=l.status==='cancelled'?'cancelled':l.status==='interest_pending'?'pending':'active',label=l.status==='cancelled'?'Cancelado':l.status==='interest_pending'?'Capital pagado · interés pendiente':'Activo';return `<div class="loan-item"><div class="loan-head"><div><div class="loan-title">Préstamo ${fmtDate(l.startDate)}</div><div class="loan-sub">Original ${money(l.principalOriginal)} · ${l.interestRate}% mensual</div></div><span class="loan-status ${cls}">${label}</span></div><div class="loan-summary"><div><span>Capital actual</span><b>${money(l.principalBalance)}</b></div><div><span>Cuota actual</span><b>${money(quota)}</b></div><div><span>Interés pendiente</span><b>${money(totalInterestOutstanding(l))}</b></div><div><span>${l.status==='cancelled'?'Cancelado':'Próximo pago'}</span><b>${l.status==='cancelled'?fmtDate(l.cancelledAt):(p?fmtDate(p.dueDate):'—')}</b></div></div><div class="loan-actions">${activeStatus(l)?`<button class="mini-btn" type="button" data-pay-loan="${l.id}">Registrar pago</button><button class="mini-btn edit-loan-btn" type="button" data-edit-loan="${l.id}">Editar préstamo</button>`:''}<button class="mini-btn" type="button" data-loan-history="${l.id}">Movimientos</button></div></div>`}
 
 function openEditLoanModal(loanId){
@@ -867,11 +1020,11 @@ function renderGoogleSheetsState(){
   const text=$('googleSheetsStateText'),btn=$('googleSheetsButton'),openBtn=$('googleSheetsOpenButton'),badge=$('googleSheetsBadge'),issue=$('googleSheetsIssue'),item=$('googleProtectionItem'),optional=$('googleSheetsOptional');
   if(!text||!btn)return;
   if(!googleSheetsConfigured()){
-    text.textContent='Google Sheets está listo en el código; falta vincular el OAuth Client ID web de NEXA una sola vez.';
+    text.textContent='La conexión de Google necesita terminar la configuración administrativa una sola vez.';
     btn.textContent='Configurar Google';btn.disabled=true;
     if(badge){badge.className='status-badge';badge.textContent='Configuración única'}
     if(item){item.classList.add('issue');item.classList.remove('connected')}
-    if(issue){issue.textContent=`Configuración única: crea un OAuth Client ID web para NEXA y autoriza ${location.origin}. No necesitas activar Google en Firebase Authentication.`;issue.classList.remove('hidden')}
+    if(issue){issue.textContent=`Configuración única: autoriza ${location.origin} en el OAuth Client de Google y habilita Google Sheets API. No necesitas activar Google en Firebase Authentication.`;issue.classList.remove('hidden')}
     if(optional)optional.textContent='Firebase y la copia diaria siguen activos. El Excel manual está separado abajo en “Copias manuales y exportaciones”.';
     if(openBtn)openBtn.classList.add('hidden');renderProtectionOverall();return
   }
@@ -896,7 +1049,7 @@ function renderGoogleSheetsState(){
     text.textContent='Conecta una cuenta de Google y NEXA creará “NEXA CAPITAL - Respaldo” automáticamente.';
     btn.textContent='Conectar Google';
     if(badge){badge.className='status-badge';badge.textContent='Sin conectar'}
-    if(item){item.classList.remove('connected','issue');item.classList.add('optional')}
+    if(item){item.classList.remove('connected','issue','optional')}
     if(issue){issue.textContent=googleConnectionIssue||'';issue.classList.toggle('hidden',!googleConnectionIssue)}
     if(optional)optional.textContent='Después de conectarlo, cada cambio guardado se enviará automáticamente al mismo archivo. El Excel manual permanece abajo como exportación aparte.';
     if(openBtn)openBtn.classList.add('hidden');
@@ -912,7 +1065,12 @@ function requestGoogleAccess(){
         client_id:NEXA_GOOGLE_OAUTH_CLIENT_ID,
         scope:NEXA_GOOGLE_SCOPES,
         callback:(resp)=>{
-          if(resp?.error)return reject(new Error(resp.error_description||resp.error));
+          if(resp?.error){
+            const code=String(resp.error||'');
+            const desc=String(resp.error_description||'');
+            if(code==='access_denied')return reject(new Error('Google no recibió autorización. Vuelve a conectar y acepta el permiso para crear y actualizar el respaldo.'));
+            return reject(new Error(desc||code||'Google no pudo autorizar la cuenta.'))
+          }
           googleAccessToken=resp?.access_token||'';
           if(!googleAccessToken)return reject(new Error('Google no entregó autorización.'));
           googleConnectionIssue='';
@@ -920,6 +1078,12 @@ function requestGoogleAccess(){
           googleSheetsMeta.connectedAt=googleSheetsMeta.connectedAt||new Date().toISOString();
           persistGoogleSheetsMeta().catch(()=>{});
           renderGoogleSheetsState();resolve(googleAccessToken)
+        },
+        error_callback:(err)=>{
+          const type=String(err?.type||'');
+          if(type==='popup_failed_to_open')return reject(new Error('El navegador bloqueó la ventana de Google. Permite ventanas emergentes para NEXA e inténtalo otra vez.'));
+          if(type==='popup_closed')return reject(new Error('La ventana de Google se cerró antes de terminar la conexión.'));
+          reject(new Error('Google no pudo abrir la autorización. Revisa que '+location.origin+' esté autorizado en el OAuth Client.'))
         }
       });
       googleSheetsTokenClient.requestAccessToken({prompt:googleAccessToken?'':'consent'})
@@ -935,8 +1099,8 @@ async function googleApi(url,options={}){
   if(!res.ok){
     if(res.status===401){googleAccessToken='';throw new Error('La autorización de Google venció. Pulsa “Reconectar Google”.')}
     const raw=data?.error?.message||`Google API ${res.status}`,low=raw.toLowerCase();
-    if(low.includes('has not been used')||low.includes('disabled')||low.includes('accessnotconfigured'))throw new Error('Habilita Google Sheets API en el proyecto de Google Cloud de NEXA.');
-    if(low.includes('origin')||low.includes('redirect_uri_mismatch')||low.includes('unauthorized_client'))throw new Error(`Autoriza ${location.origin} en el OAuth Client ID web de NEXA.`);
+    if(low.includes('has not been used')||low.includes('disabled')||low.includes('accessnotconfigured'))throw new Error('Falta habilitar Google Sheets API en Google Cloud. Es una configuración única del administrador.');
+    if(low.includes('origin')||low.includes('redirect_uri_mismatch')||low.includes('unauthorized_client'))throw new Error(`En Google Cloud agrega ${location.origin} en Orígenes de JavaScript autorizados del OAuth Client. No se configura en Firebase Authentication.`);
     if(res.status===403&&low.includes('permission'))throw new Error('Google no concedió el permiso necesario. Vuelve a conectar y acepta el acceso al archivo de respaldo.');
     throw new Error(raw)
   }
