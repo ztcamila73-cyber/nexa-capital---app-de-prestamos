@@ -727,10 +727,11 @@ const NEXA_FIREBASE_CONFIG={
 
 /* Google Sheets se conecta DIRECTAMENTE con Google Identity Services.
    No depende de Google como proveedor de Firebase Authentication.
-   CONFIGURACIÓN ÚNICA DEL ADMINISTRADOR:
-   crea un OAuth Client ID tipo "Aplicación web" para NEXA y pégalo aquí.
-   Agrega el dominio de Vercel en "Orígenes de JavaScript autorizados". */
-const NEXA_GOOGLE_OAUTH_CLIENT_ID="600139879243-daqofgrmd5m18v0qr35t618khfibuis6.apps.googleusercontent.com";
+   OAuth Client web PROPIO de NEXA CAPITAL.
+   Proyecto Google Cloud independiente de otras aplicaciones.
+   Origen autorizado: https://progama-seven.vercel.app
+   APIs requeridas: Google Sheets API + Google Drive API. */
+const NEXA_GOOGLE_OAUTH_CLIENT_ID="427027770809-8f1kngmiep6lpgin019hdmobnuiro7mc.apps.googleusercontent.com";
 // Alcance mínimo: solo archivos de Google Drive creados/usados por NEXA.
 const NEXA_GOOGLE_SCOPES="https://www.googleapis.com/auth/drive.file";
 
@@ -1024,7 +1025,7 @@ function renderGoogleSheetsState(){
     btn.textContent='Configurar Google';btn.disabled=true;
     if(badge){badge.className='status-badge';badge.textContent='Configuración única'}
     if(item){item.classList.add('issue');item.classList.remove('connected')}
-    if(issue){issue.textContent=`Configuración única: autoriza ${location.origin} en el OAuth Client de Google y habilita Google Sheets API. No necesitas activar Google en Firebase Authentication.`;issue.classList.remove('hidden')}
+    if(issue){issue.textContent=`Configuración única: autoriza ${location.origin} en el OAuth Client de Google y habilita Google Sheets API + Google Drive API. No necesitas activar Google en Firebase Authentication.`;issue.classList.remove('hidden')}
     if(optional)optional.textContent='Firebase y la copia diaria siguen activos. El Excel manual está separado abajo en “Copias manuales y exportaciones”.';
     if(openBtn)openBtn.classList.add('hidden');renderProtectionOverall();return
   }
@@ -1058,7 +1059,7 @@ function renderGoogleSheetsState(){
 }
 function requestGoogleAccess(){
   return new Promise((resolve,reject)=>{
-    if(!googleSheetsConfigured())return reject(new Error('Falta configurar el OAuth Client ID web de NEXA.'));
+    if(!googleSheetsConfigured())return reject(new Error('Falta pegar el OAuth Client ID web propio de NEXA en el código.'));
     if(!window.google?.accounts?.oauth2)return reject(new Error('Google todavía no terminó de cargar. Espera unos segundos e inténtalo otra vez.'));
     try{
       googleSheetsTokenClient=google.accounts.oauth2.initTokenClient({
