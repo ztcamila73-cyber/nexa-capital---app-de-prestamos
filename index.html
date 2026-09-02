@@ -928,3 +928,61 @@ if(!firebaseConfigured())showOnly('authScreen');
 </script>
 </body>
 </html>
+
+/* ===== NEXA v8 · corrección de navegación al hacer scroll + ajustes responsivos ===== */
+@media(min-width:980px){
+  /* En escritorio el menú pertenece al contenido: NO persigue el scroll. */
+  .bottom-nav{
+    position:relative!important;
+    top:auto!important;
+    bottom:auto!important;
+    z-index:10!important;
+    margin:10px auto 20px!important;
+    width:min(760px,calc(100% - 40px))!important;
+    box-shadow:0 2px 10px rgba(16,24,40,.045)!important;
+  }
+  /* Solo la cabecera con negocio/cuenta permanece arriba. */
+  .topbar{position:sticky!important;top:0!important;z-index:35!important}
+}
+
+/* Protección de datos: evita columnas estrechas en tarjetas de configuración */
+@media(min-width:760px){
+  .google-protection.protection-item{
+    grid-template-columns:38px minmax(0,1fr)!important;
+    align-items:start!important;
+  }
+  .google-protection .protection-actions{
+    grid-column:2!important;
+    justify-content:flex-start!important;
+    margin-top:8px!important;
+  }
+  .google-protection .protection-title,
+  .google-protection .protection-sub,
+  .google-protection .google-issue,
+  .google-protection .google-optional{
+    max-width:none!important;
+    width:auto!important;
+  }
+  .google-protection .google-issue{
+    display:block!important;
+    white-space:normal!important;
+  }
+}
+
+/* En pantallas intermedias, acciones de cualquier respaldo pasan debajo. */
+@media(min-width:621px) and (max-width:1180px){
+  .protection-item{
+    grid-template-columns:36px minmax(0,1fr)!important;
+    align-items:start!important;
+  }
+  .protection-item .protection-actions{
+    grid-column:2!important;
+    justify-content:flex-start!important;
+    margin-top:7px!important;
+  }
+}
+
+/* Un poco más de aire al entrar a cada sección después del menú. */
+@media(min-width:980px){
+  .main-content,.content,.page-wrap{scroll-margin-top:78px}
+}
