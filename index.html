@@ -785,7 +785,7 @@ body.modal-open{overflow:hidden!important;touch-action:none}
           <div class="protection-list">
             <div class="protection-item"><div class="protection-icon"><svg viewBox="0 0 24 24"><path d="M7 18h10a4 4 0 0 0 .7-7.9A6 6 0 0 0 6.2 9.2 4.5 4.5 0 0 0 7 18Z"/><path d="m9.5 13 1.7 1.7 3.5-3.5"/></svg></div><div><div class="protection-title">Firebase · guardado principal</div><div id="firebaseStateText" class="protection-sub">Comprobando conexión…</div></div><div class="protection-actions"><span id="firebaseProtectionBadge" class="status-badge">Revisando</span><button class="mini-btn" type="button" data-action="verify-cloud">Comprobar</button></div></div>
             <div class="protection-item"><div class="protection-icon"><svg viewBox="0 0 24 24"><path d="M12 3v12"/><path d="m8 11 4 4 4-4"/><path d="M5 18h14v3H5z"/></svg></div><div><div class="protection-title">Copia diaria automática</div><div id="firebaseBackupStateText" class="protection-sub">Se crea automáticamente al entrar a la app.</div></div><div class="protection-actions"><span id="firebaseBackupBadge" class="status-badge success">Automática</span><button class="mini-btn" type="button" data-action="cloud-backup">Crear ahora</button></div></div>
-            <div id="googleProtectionItem" class="protection-item google-protection"><div class="protection-icon"><svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h8M11 6v12M15 6v12"/></svg></div><div><div class="protection-title">Google Sheets · segunda copia en vivo</div><div id="googleSheetsStateText" class="protection-sub">Conecta tu cuenta una sola vez. NEXA recordará esta hoja y seguirá usando el mismo archivo como segunda copia externa.</div><div id="googleSheetsIssue" class="google-issue hidden"></div><div id="googleSheetsOptional" class="google-optional">La vinculación queda guardada. Si Google vence o revoca la autorización, NEXA te avisará sin afectar el guardado principal en Firebase.</div></div><div class="protection-actions"><span id="googleSheetsBadge" class="status-badge">Sin conectar</span><button id="googleSheetsButton" class="mini-btn" type="button" data-action="google-sheets-sync">Conectar Google</button><button id="googleSheetsOpenButton" class="mini-btn hidden" type="button" data-action="open-google-sheet">Abrir hoja</button></div></div>
+            <div id="googleProtectionItem" class="protection-item google-protection"><div class="protection-icon"><svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h8M11 6v12M15 6v12"/></svg></div><div><div class="protection-title">Google Sheets · segunda copia en vivo</div><div id="googleSheetsStateText" class="protection-sub">Conecta tu cuenta una sola vez. NEXA guardará el mismo archivo “NEXA CAPITAL - Respaldo” y lo actualizará; no crea una hoja nueva en cada copia.</div><div id="googleSheetsIssue" class="google-issue hidden"></div><div id="googleSheetsOptional" class="google-optional">La vinculación queda guardada. Si Google vence o revoca la autorización, NEXA te avisará sin afectar el guardado principal en Firebase.</div></div><div class="protection-actions"><span id="googleSheetsBadge" class="status-badge">Sin conectar</span><button id="googleSheetsButton" class="mini-btn" type="button" data-action="google-sheets-sync">Conectar Google</button><button id="googleSheetsOpenButton" class="mini-btn hidden" type="button" data-action="open-google-sheet">Abrir hoja</button></div></div>
           </div>
           <details class="manual-backups"><summary>Copias manuales y exportaciones</summary><div class="manual-backup-body">
             <div class="manual-row"><div><b>Excel completo</b><span>Negocios, clientes, préstamos, cuotas y movimientos.</span></div><button class="mini-btn" type="button" data-action="download-excel">Descargar</button></div>
@@ -830,7 +830,7 @@ const NEXA_FIREBASE_CONFIG={
    APIs requeridas: Google Sheets API + Google Drive API. */
 const NEXA_GOOGLE_OAUTH_CLIENT_ID="427027770809-8f1kngmiep6lpgin019hdmobnuiro7mc.apps.googleusercontent.com";
 const NEXA_GOOGLE_ALLOWED_ORIGIN="https://progama-seven.vercel.app";
-const NEXA_GOOGLE_OAUTH_BUILD="v18";
+const NEXA_GOOGLE_OAUTH_BUILD="v20";
 // Alcance mínimo recomendado por Google: solo archivos creados/usados por NEXA.
 const NEXA_GOOGLE_SCOPES="https://www.googleapis.com/auth/drive.file";
 
@@ -858,6 +858,9 @@ let googleSheetsMeta={sheetId:'',sheetUrl:'',lastSyncAt:'',googleConnected:false
 let googleConnectionIssue='';
 let googleReconnectRequired=false;
 let googleReconnectNoticeShown=false;
+let googleSheetsMetaRef=null;
+let googleSheetsMetaRefUid='';
+let googleAccountLinkNoticeShown=false;
 let lastFirebaseBackupAt='',lastFirebaseBackupReason='';
 
 const $=id=>document.getElementById(id);
@@ -919,7 +922,7 @@ function showForgot(){$('loginBox').classList.add('hidden');$('registerBox').cla
 async function login(){if(!cloudAuth)return showToast('Firebase sin configurar','Primero conecta el proyecto Firebase nuevo.','bad');const email=$('loginEmail').value.trim().toLowerCase(),pass=$('loginPass').value;if(!email)return showToast('Escribe tu correo','Ingresa el correo con el que registraste NEXA.','bad');if(!validEmail(email))return showToast('Revisa el correo','Ejemplo: nombre@correo.com','bad');if(!pass)return showToast('Escribe tu contraseña','','bad');try{await cloudAuth.signInWithEmailAndPassword(email,pass)}catch(e){showToast('No se pudo iniciar sesión',firebaseErrorText(e),'bad')}}
 async function register(){if(!cloudAuth)return showToast('Firebase sin configurar','Primero conecta el proyecto Firebase nuevo.','bad');const name=$('regName').value.trim(),email=$('regEmail').value.trim().toLowerCase(),pass=$('regPass').value;if(!name)return showToast('Escribe tu nombre','','bad');if(!validEmail(email))return showToast('Revisa el correo','Usa un correo válido, por ejemplo nombre@correo.com.','bad');if(pass.length<6)return showToast('Contraseña muy corta','Usa mínimo 6 caracteres.','bad');try{const cred=await cloudAuth.createUserWithEmailAndPassword(email,pass);await cred.user.updateProfile({displayName:name});currentUser={id:cred.user.uid,email,name};await loadCloudState(cred.user.uid);openAfterLogin()}catch(e){showToast('No se pudo crear la cuenta',firebaseErrorText(e),'bad')}}
 async function resetPassword(){if(!cloudAuth)return showToast('Firebase sin configurar','','bad');const email=$('forgotEmail').value.trim().toLowerCase();if(!email)return showToast('Escribe tu correo','','bad');if(!validEmail(email))return showToast('Revisa el correo','Ejemplo: nombre@correo.com','bad');try{await cloudAuth.sendPasswordResetEmail(email);showLogin();showToast('Revisa tu correo','Se envió el enlace para cambiar la contraseña.')}catch(e){showToast('No se pudo enviar',firebaseErrorText(e),'bad')}}
-async function logout(){if(cloudAuth)await cloudAuth.signOut();currentBusinessId=null;currentUser=null;showOnly('authScreen')}
+async function logout(){stopGoogleSheetsMetaListener();if(cloudAuth)await cloudAuth.signOut();currentBusinessId=null;currentUser=null;showOnly('authScreen')}
 
 function protectionOnboardingKey(){return PROTECTION_ONBOARDING_KEY+(currentUser?.id||'guest')}
 function showProtectionOnboarding(){if(!currentUser||localStorage.getItem(protectionOnboardingKey())==='1')return;localStorage.setItem(protectionOnboardingKey(),'1');$('modalTitle').textContent='Protege tu información';$('modalContent').innerHTML=`<div class="onboarding-protection"><div class="onboarding-lock"><svg viewBox="0 0 24 24"><path d="M12 3 5 6v5c0 4.6 2.8 8.2 7 10 4.2-1.8 7-5.4 7-10V6l-7-3Z"/><path d="m9 12 2 2 4-4"/></svg></div><div class="onboarding-lead"><b>Tu primer negocio ya está listo.</b><br>NEXA protegerá la información automáticamente. Para tener una segunda copia visible fuera de la app, conecta Google Sheets una sola vez.</div><div class="onboarding-step"><div class="step-dot">✓</div><div><b>Guardado automático en Firebase</b><span>Cada cliente, préstamo y pago se guarda en la nube.</span></div></div><div class="onboarding-step"><div class="step-dot">✓</div><div><b>Copia diaria automática</b><span>Se crea al entrar a la app; también hacemos copia antes de eliminaciones.</span></div></div><div class="onboarding-step pending"><div class="step-dot">3</div><div><b>Conecta Google Sheets</b><span>Crea y mantiene el mismo archivo con negocios, clientes, préstamos y movimientos.</span></div></div><div class="onboarding-actions"><button class="secondary" type="button" data-action="onboarding-later">Hacerlo después</button><button class="primary" type="button" data-action="onboarding-google">Conectar Google ahora</button></div></div>`;showModal();if(cloudDb&&currentUser?.id)cloudDb.ref(cloudPath(currentUser.id,'settings/protectionOnboarding')).set({shown:true,shownAt:new Date().toISOString()}).catch(()=>{})}
@@ -959,7 +962,7 @@ async function saveBusinessName(){
   if($('businessScreen').classList.contains('hidden')){currentBusinessId=b.id;openBusiness(b.id)}else renderBusinessSelector();
 }
 function showDailyCollectionSummary(){if(!currentUser||!currentBusinessId)return;const key=`NEXA_DAILY_COLLECTION_SUMMARY_${currentUser.id}_${currentBusinessId}_${today()}`;if(localStorage.getItem(key))return;const alerts=businessLoans().filter(activeStatus).map(l=>loanAlertInfo(l)),todayCount=alerts.filter(x=>x.kind==='today').length,overdue=alerts.filter(x=>x.kind==='overdue').length;if(todayCount||overdue){localStorage.setItem(key,'1');setTimeout(()=>showToast('Resumen de cobros',`${todayCount} para hoy · ${overdue} vencido(s). Revisa Cobros para ver el detalle.`,'info'),700)}}
-function openBusiness(businessId){currentBusinessId=businessId;localStorage.setItem('NEXA_LAST_BUSINESS_'+currentUser.id,businessId);ensureAllLoansCurrent(today());showOnly('mainScreen');currentPage='home';setPage('home');refreshAll();showDailyCollectionSummary()}
+function openBusiness(businessId){currentBusinessId=businessId;localStorage.setItem('NEXA_LAST_BUSINESS_'+currentUser.id,businessId);['historyYear','clientYear'].forEach(id=>{const el=$(id);if(el){el.value='';delete el.dataset.yearsReady}});ensureAllLoansCurrent(today());showOnly('mainScreen');currentPage='home';setPage('home');refreshAll();showDailyCollectionSummary()}
 function setPage(page){currentPage=page;document.querySelectorAll('.page').forEach(x=>x.classList.toggle('active',x.id==='page-'+page));document.querySelectorAll('.nav-btn').forEach(x=>x.classList.toggle('active',x.dataset.page===page));if(page==='newLoan')prepareNewLoanForm();if(page==='clients')renderClients();if(page==='collections')renderCollections();if(page==='history')renderHistory();if(page==='settings')renderSettings();if(page==='home')renderHome();window.scrollTo({top:0,behavior:'smooth'})}
 
 function findExistingClient(phone,name=''){const p=normalizePhone(phone),n=normalizeName(name);return businessClients().find(c=>p&&normalizePhone(c.phone)===p)||businessClients().find(c=>!p&&n&&normalizeName(c.name)===n)||null}
@@ -1080,8 +1083,30 @@ function renderCollections(){ensureAllLoansCurrent(today());const q=$('collectio
 function collectionHTML(l){const c=getClient(l.clientId),info=loanAlertInfo(l),p=info.period,cls=info.kind==='overdue'?'s-overdue':info.kind==='today'?'s-today':info.kind==='upcoming'?'s-upcoming':'s-ok';return `<div class="collection-item"><div class="collection-top"><div><div class="collection-name">${esc(c?.name||'Cliente')}</div><div class="collection-due">${p?`Vence ${fmtDate(p.dueDate)}`:'Sin vencimiento'} · capital ${money(l.principalBalance)}</div><span class="alert-status ${cls}">${esc(info.label)}</span></div><div class="collection-amount"><span class="small muted">Interés pendiente</span><b>${money(totalInterestOutstanding(l))}</b></div></div><div class="collection-actions"><button class="primary" type="button" data-pay-loan="${l.id}">Registrar pago</button><button class="secondary" type="button" data-client-detail="${l.clientId}">Ver cliente</button></div></div>`}
 
 function renderSettings(){const b=currentBusiness();if(!b)return;if($('settingsBusinessName'))$('settingsBusinessName').textContent=b.name;$('accountName').textContent=currentUser?.name||'Usuario';$('accountEmail').textContent=currentUser?.email||'—';renderBackupStatus();renderGoogleSheetsState();renderProtectionOverall()}
-function fillYearSelects(){const years=new Set([new Date().getFullYear()]);for(const l of businessLoans())if(l.startDate)years.add(Number(l.startDate.slice(0,4)));for(const m of businessMovements())if(m.date)years.add(Number(m.date.slice(0,4)));const opts=[...years].filter(Boolean).sort((a,b)=>b-a).map(y=>`<option value="${y}">${y}</option>`).join('');['historyYear','clientYear'].forEach(id=>{const el=$(id),old=el.value;el.innerHTML=opts;if(old&&[...years].includes(Number(old)))el.value=old})}
-function renderHistory(){fillYearSelects();const year=Number($('historyYear').value)||new Date().getFullYear(),movs=businessMovements().filter(m=>String(m.date).startsWith(String(year))),loans=businessLoans().filter(l=>String(l.startDate).startsWith(String(year))),interest=movs.reduce((a,m)=>a+(Number(m.interestPaid)||0),0),capitalRecovered=movs.reduce((a,m)=>a+(Number(m.capitalPaid)||0),0),cancelled=businessLoans().filter(l=>l.cancelledAt&&String(l.cancelledAt).startsWith(String(year))).length,clients=businessClients().filter(c=>clientActivityInYear(c.id,year)).length;$('historySummary').innerHTML=`<div class="year-box"><span>Clientes con actividad</span><b>${clients}</b></div><div class="year-box"><span>Préstamos nuevos</span><b>${loans.length}</b></div><div class="year-box"><span>Intereses cobrados</span><b>${money(interest)}</b></div><div class="year-box"><span>Capital recuperado</span><b>${money(capitalRecovered)}</b></div><div class="year-box"><span>Préstamos cancelados</span><b>${cancelled}</b></div>`;$('historyMovements').innerHTML=movs.length?[...movs].sort((a,b)=>String(b.date).localeCompare(String(a.date))).slice(0,80).map(m=>{const c=getClient(m.clientId);return `<div class="movement-item"><div class="movement-top"><div><div class="movement-concept">${esc(c?.name||'Cliente')} · ${esc(m.concept||m.type)}</div><div class="movement-date">${fmtDate(m.date)}</div></div></div><div class="movement-values">${m.interestPaid?`<span class="mv-interest">Interés ${money(m.interestPaid)}</span>`:''}${m.capitalPaid?`<span class="mv-capital">Capital ${money(m.capitalPaid)}</span>`:''}${m.type==='loan'?`<span class="mv-capital">Préstamo ${money(m.principalAfter)}</span>`:''}</div></div>`}).join(''):'<div class="empty">No hay movimientos registrados en este año.</div>'}
+function yearFromDate(value){const y=Number(String(value||'').slice(0,4));return Number.isFinite(y)&&y>1900?y:0}
+function availableBusinessYears(){
+  const years=new Set([new Date().getFullYear()]);
+  for(const l of businessLoans()){
+    const start=yearFromDate(l.startDate),cancel=yearFromDate(l.cancelledAt);if(start)years.add(start);if(cancel)years.add(cancel);
+    for(const p of l.interestPeriods||[]){const y=yearFromDate(p.dueDate);if(y)years.add(y)}
+  }
+  for(const m of businessMovements()){const y=yearFromDate(m.date);if(y)years.add(y)}
+  return [...years].filter(Boolean).sort((a,b)=>b-a)
+}
+function fillYearSelects(){
+  const years=availableBusinessYears(),currentYear=new Date().getFullYear(),opts=years.map(y=>`<option value="${y}">${y}</option>`).join('');
+  ['historyYear','clientYear'].forEach(id=>{
+    const el=$(id);if(!el)return;const previous=Number(el.value),firstLoad=el.dataset.yearsReady!=='1';el.innerHTML=opts;
+    if(!firstLoad&&years.includes(previous))el.value=String(previous);else if(years.includes(currentYear))el.value=String(currentYear);else if(years.length)el.value=String(years[0]);
+    el.dataset.yearsReady='1';
+  })
+}
+function renderHistory(){
+  fillYearSelects();
+  const year=Number($('historyYear').value)||new Date().getFullYear(),movs=businessMovements().filter(m=>yearFromDate(m.date)===year),loans=businessLoans().filter(l=>yearFromDate(l.startDate)===year),interest=movs.reduce((a,m)=>a+(Number(m.interestPaid)||0),0),capitalRecovered=movs.reduce((a,m)=>a+(Number(m.capitalPaid)||0),0),cancelled=businessLoans().filter(l=>yearFromDate(l.cancelledAt)===year).length,clients=businessClients().filter(c=>clientActivityInYear(c.id,year)).length;
+  $('historySummary').innerHTML=`<div class="year-box"><span>Clientes con actividad</span><b>${clients}</b></div><div class="year-box"><span>Préstamos nuevos</span><b>${loans.length}</b></div><div class="year-box"><span>Intereses cobrados</span><b>${money(interest)}</b></div><div class="year-box"><span>Capital recuperado</span><b>${money(capitalRecovered)}</b></div><div class="year-box"><span>Préstamos cancelados</span><b>${cancelled}</b></div>`;
+  $('historyMovements').innerHTML=movs.length?[...movs].sort((a,b)=>String(b.date).localeCompare(String(a.date))).slice(0,120).map(m=>{const c=getClient(m.clientId),loan=getLoan(m.loanId),originYear=yearFromDate(loan?.startDate),originNote=originYear&&originYear!==year?` · préstamo originado en ${originYear}`:'';return `<div class="movement-item"><div class="movement-top"><div><div class="movement-concept">${esc(c?.name||'Cliente')} · ${esc(m.concept||m.type)}</div><div class="movement-date">${fmtDate(m.date)}${originNote}</div></div></div><div class="movement-values">${m.interestPaid?`<span class="mv-interest">Interés ${money(m.interestPaid)}</span>`:''}${m.capitalPaid?`<span class="mv-capital">Capital ${money(m.capitalPaid)}</span>`:''}${m.type==='loan'?`<span class="mv-capital">Préstamo ${money(m.principalAfter)}</span>`:''}</div></div>`}).join(''):'<div class="empty">No hay movimientos registrados en este año.</div>'
+}
 function backupTables(){
   const businessById=new Map(db.businesses.map(b=>[b.id,b])),clientById=new Map(db.clients.map(c=>[c.id,c]));
   const loanRows=[['ID préstamo','Negocio','Cliente','Teléfono','Fecha préstamo','Monto original','Tasa % mensual','Cuota inicial','Capital pendiente','Cuota interés actual','Interés pendiente','Primera fecha pago','Próximo vencimiento','Estado','Fecha cancelación','Año']];
@@ -1093,7 +1118,7 @@ function backupTables(){
   for(const c of db.clients){const b=businessById.get(c.businessId),ls=db.loans.filter(l=>l.clientId===c.id&&l.businessId===c.businessId);clientRows.push([c.id,b?.name||'',c.name,c.phone||'',String(c.createdAt||'').slice(0,10),ls.length,ls.filter(activeStatus).length,ls.filter(l=>l.status==='cancelled').length])}
   for(const l of db.loans){const b=businessById.get(l.businessId),c=clientById.get(l.clientId),open=earliestOpenPeriod(l);loanRows.push([l.id,b?.name||'',c?.name||'',c?.phone||'',l.startDate||'',Number(l.principalOriginal)||0,Number(l.interestRate)||0,calcInterest(l.principalOriginal,l.interestRate),Number(l.principalBalance)||0,loanCurrentQuota(l),totalInterestOutstanding(l),l.firstDueDate||'',open?.dueDate||'',l.status||'',l.cancelledAt||'',String(l.startDate||'').slice(0,4)]);for(const p of l.interestPeriods||[]){const quota=Number(p.quota)||0,paid=Number(p.paid)||0;periodRows.push([b?.name||'',c?.name||'',c?.phone||'',l.id,p.dueDate||'',quota,paid,Math.max(0,quota-paid),quota<=paid?'Pagada':(p.dueDate<today()?'Vencida':'Pendiente'),String(p.dueDate||'').slice(0,4)])}}
   for(const m of db.movements){const b=businessById.get(m.businessId),c=clientById.get(m.clientId);movementRows.push([m.id,b?.name||'',c?.name||'',c?.phone||'',m.loanId||'',m.date||'',m.concept||'',m.type||'',Number(m.interestPaid)||0,Number(m.capitalPaid)||0,Number(m.principalBefore)||0,Number(m.principalAfter)||0,Number(m.interestBefore)||0,Number(m.interestAfter)||0,String(m.date||'').slice(0,4)])}
-  const years=[...new Set([...db.loans.map(l=>String(l.startDate||'').slice(0,4)),...db.movements.map(m=>String(m.date||'').slice(0,4))].filter(Boolean))].sort();
+  const years=[...new Set([String(new Date().getFullYear()),...db.loans.flatMap(l=>[String(l.startDate||'').slice(0,4),String(l.cancelledAt||'').slice(0,4),...(l.interestPeriods||[]).map(p=>String(p.dueDate||'').slice(0,4))]),...db.movements.map(m=>String(m.date||'').slice(0,4))].filter(y=>/^\d{4}$/.test(y)))].sort();
   const annual=[['Negocio','Año','Préstamos nuevos','Intereses cobrados','Capital recuperado','Préstamos cancelados','Clientes con actividad']];
   for(const b of db.businesses){for(const year of years){const loans=db.loans.filter(l=>l.businessId===b.id&&String(l.startDate||'').startsWith(year)),movs=db.movements.filter(m=>m.businessId===b.id&&String(m.date||'').startsWith(year)),cancelled=db.loans.filter(l=>l.businessId===b.id&&String(l.cancelledAt||'').startsWith(year)).length,clientIds=new Set([...loans.map(l=>l.clientId),...movs.map(m=>m.clientId)]);annual.push([b.name,year,loans.length,movs.reduce((a,m)=>a+(Number(m.interestPaid)||0),0),movs.reduce((a,m)=>a+(Number(m.capitalPaid)||0),0),cancelled,clientIds.size])}}
   const control=[['Campo','Valor'],['Aplicación','NEXA CAPITAL'],['Usuario',currentUser?.email||''],['Fecha respaldo',new Date().toLocaleString('es-CO')],['Negocios',db.businesses.length],['Clientes',db.clients.length],['Préstamos',db.loans.length],['Movimientos',db.movements.length],['Nota','El interés pagado no reduce capital. Un abono a capital recalcula la cuota futura de interés.']];
@@ -1108,18 +1133,36 @@ function downloadExcelBackup(){
 function googleSheetsConfigured(){
   return !!(NEXA_GOOGLE_OAUTH_CLIENT_ID&&NEXA_GOOGLE_OAUTH_CLIENT_ID.includes('.apps.googleusercontent.com')&&!NEXA_GOOGLE_OAUTH_CLIENT_ID.startsWith('PEGA_AQUI'))
 }
+function stopGoogleSheetsMetaListener(){
+  try{if(googleSheetsMetaRef)googleSheetsMetaRef.off()}catch(e){}
+  googleSheetsMetaRef=null;googleSheetsMetaRefUid=''
+}
+function applyGoogleSheetsMeta(remote){
+  const beforeId=googleSheetsMeta.sheetId||'';
+  googleSheetsMeta={sheetId:'',sheetUrl:'',lastSyncAt:'',googleConnected:false,googleEmail:'',connectedAt:'',pendingAt:'',...(remote||{})};
+  if(googleSheetsMeta.sheetId)googleSheetsMeta.googleConnected=true;
+  renderGoogleSheetsState();
+  if(!beforeId&&googleSheetsMeta.sheetId&&!googleAccessToken&&!googleAccountLinkNoticeShown){
+    googleAccountLinkNoticeShown=true;
+    setTimeout(()=>showToast('Google Sheets vinculado a tu cuenta','NEXA encontró la hoja de respaldo guardada en tu cuenta. En este dispositivo se reutilizará el mismo archivo; solo debes autorizar Google si el navegador lo necesita.','info'),650)
+  }
+}
 async function loadGoogleSheetsMeta(){
-  googleReconnectRequired=false;googleReconnectNoticeShown=false;googleConnectionIssue='';
+  googleReconnectRequired=false;googleReconnectNoticeShown=false;googleAccountLinkNoticeShown=false;googleConnectionIssue='';
   googleSheetsMeta={sheetId:'',sheetUrl:'',lastSyncAt:'',googleConnected:false,googleEmail:'',connectedAt:'',pendingAt:''};
+  stopGoogleSheetsMetaListener();
   if(!cloudDb||!currentUser?.id){renderGoogleSheetsState();return}
-  try{const snap=await cloudDb.ref(cloudPath(currentUser.id,'settings/googleSheets')).once('value');googleSheetsMeta={...googleSheetsMeta,...(snap.val()||{})}}catch(e){console.warn('Google Sheets config:',e)}
-  renderGoogleSheetsState()
+  const uid=currentUser.id,ref=cloudDb.ref(cloudPath(uid,'settings/googleSheets'));googleSheetsMetaRef=ref;googleSheetsMetaRefUid=uid;
+  try{
+    const snap=await ref.once('value');if(currentUser?.id!==uid)return;applyGoogleSheetsMeta(snap.val()||{});
+    ref.on('value',live=>{if(currentUser?.id!==uid)return;applyGoogleSheetsMeta(live.val()||{})},err=>console.warn('Google Sheets en vivo:',err));
+  }catch(e){console.warn('Google Sheets config:',e);renderGoogleSheetsState()}
 }
 async function persistGoogleSheetsMeta(){
   if(!cloudDb||!currentUser?.id)return;
-  await cloudDb.ref(cloudPath(currentUser.id,'settings/googleSheets')).set({
+  await cloudDb.ref(cloudPath(currentUser.id,'settings/googleSheets')).update({
     sheetId:googleSheetsMeta.sheetId||'',sheetUrl:googleSheetsMeta.sheetUrl||'',lastSyncAt:googleSheetsMeta.lastSyncAt||'',
-    googleConnected:!!googleSheetsMeta.googleConnected,googleEmail:googleSheetsMeta.googleEmail||'',connectedAt:googleSheetsMeta.connectedAt||'',pendingAt:googleSheetsMeta.pendingAt||''
+    googleConnected:!!googleSheetsMeta.sheetId,googleEmail:googleSheetsMeta.googleEmail||'',connectedAt:googleSheetsMeta.connectedAt||'',pendingAt:googleSheetsMeta.pendingAt||''
   })
 }
 function renderGoogleSheetsState(){
@@ -1142,7 +1185,7 @@ function renderGoogleSheetsState(){
       text.textContent=`Google Sheets vinculado${googleSheetsMeta.lastSyncAt?' · última copia '+new Date(googleSheetsMeta.lastSyncAt).toLocaleString('es-CO'):' · listo para copiar'}`;
       btn.textContent=pending?'Sincronizar ahora':'Actualizar ahora';
       if(badge){badge.className='status-badge success';badge.textContent=pending?'Cambios pendientes':'Vinculado'}
-      if(optional)optional.textContent=pending?'Hay cambios guardados en Firebase pendientes de copiar al mismo Google Sheet.':'Configuración guardada: no necesitas volver a conectar Google cada vez que cierres sesión.';
+      if(optional)optional.textContent=pending?'Hay cambios guardados en Firebase pendientes de copiar al mismo Google Sheet.':'Configuración guardada: NEXA actualiza siempre este mismo archivo; no crea uno nuevo en cada sincronización.';
       if(issue){issue.classList.add('hidden');issue.textContent=''}
     }else if(googleReconnectRequired){
       text.textContent=`Google Sheets sigue vinculado${googleSheetsMeta.lastSyncAt?' · última copia '+new Date(googleSheetsMeta.lastSyncAt).toLocaleString('es-CO'):''}, pero Google necesita renovar la autorización para seguir actualizando la segunda copia.`;
@@ -1151,10 +1194,10 @@ function renderGoogleSheetsState(){
       if(optional)optional.textContent='Tus datos siguen protegidos en Firebase. Reconectar Google permite que la segunda copia externa vuelva a quedar al día.';
       if(issue){issue.textContent='La hoja no se perdió ni se creó de nuevo. Solo se necesita renovar el permiso de Google para continuar actualizando el mismo archivo.';issue.classList.remove('hidden')}
     }else{
-      text.textContent=`Google Sheets vinculado${googleSheetsMeta.lastSyncAt?' · última copia '+new Date(googleSheetsMeta.lastSyncAt).toLocaleString('es-CO'):''}. La configuración queda guardada aunque cierres sesión en NEXA.`;
-      btn.textContent=pending?'Reanudar copia':'Actualizar ahora';
-      if(badge){badge.className='status-badge success';badge.textContent='Vinculado'}
-      if(optional)optional.textContent=pending?'Hay cambios pendientes. NEXA intentará reactivar Google; solo te pedirá reconectar si Google realmente requiere una nueva autorización.':'No necesitas configurar Google otra vez. NEXA seguirá usando esta misma hoja de respaldo.';
+      text.textContent=`Google Sheets vinculado a tu cuenta${googleSheetsMeta.lastSyncAt?' · última copia '+new Date(googleSheetsMeta.lastSyncAt).toLocaleString('es-CO'):''}. NEXA reconoce esta misma hoja en todos tus dispositivos.`;
+      btn.textContent='Activar copia';
+      if(badge){badge.className='status-badge success';badge.textContent='Vinculado a tu cuenta'}
+      if(optional)optional.textContent=pending?'Firebase ya guardó cambios pendientes. Al autorizar Google en este dispositivo, NEXA actualizará la misma hoja automáticamente.':'La hoja pertenece a tu cuenta NEXA, no a este dispositivo. NEXA reutiliza ese mismo archivo en todos tus dispositivos y no crea copias nuevas por cada sincronización.';
       if(issue){issue.classList.add('hidden');issue.textContent=''}
     }
     if(openBtn)openBtn.classList.remove('hidden');
@@ -1165,7 +1208,7 @@ function renderGoogleSheetsState(){
     if(badge){badge.className='status-badge';badge.textContent='Sin conectar'}
     if(item){item.classList.remove('connected','issue','optional')}
     if(issue){issue.textContent=googleConnectionIssue||'';issue.classList.toggle('hidden',!googleConnectionIssue)}
-    if(optional)optional.textContent='Después de conectarlo, cada cambio guardado se enviará al mismo archivo. El Excel manual permanece abajo como exportación aparte.';
+    if(optional)optional.textContent='La primera conexión crea una sola hoja. Después, cada cambio actualiza ese mismo archivo. El Excel manual permanece abajo como exportación aparte.';
     if(openBtn)openBtn.classList.add('hidden');
   }
   renderProtectionOverall()
@@ -1173,7 +1216,7 @@ function renderGoogleSheetsState(){
 function notifyGoogleReconnectNeeded(){
   if(googleReconnectNoticeShown||!currentUser||!googleSheetsMeta.sheetId)return;
   googleReconnectNoticeShown=true;
-  showToast('Google Sheets necesita reconexión','Firebase sigue guardando tus datos. Reconecta Google para que la segunda copia externa vuelva a actualizarse automáticamente.','info');
+  showToast('Segunda copia de Google pausada','La hoja sigue vinculada a tu cuenta y Firebase continúa guardando. Autoriza Google en este dispositivo para volver a actualizar automáticamente el mismo archivo.','info');
 }
 
 function requestGoogleAccess(){
@@ -1268,7 +1311,7 @@ async function syncGoogleSheetsNow(showResult=true){
     await googleApi(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values:batchUpdate`,{method:'POST',body:JSON.stringify({valueInputOption:'USER_ENTERED',data})});
     googleSheetsMeta.lastSyncAt=new Date().toISOString();googleSheetsMeta.pendingAt='';googleSheetsMeta.googleConnected=true;
     await persistGoogleSheetsMeta();googleConnectionIssue='';renderGoogleSheetsState();
-    if(showResult)showToast('Google Sheets actualizado','El mismo archivo “NEXA CAPITAL - Respaldo” quedó actualizado.');return true
+    if(showResult)showToast('Google Sheets actualizado','Se actualizó el mismo archivo “NEXA CAPITAL - Respaldo”. No se creó una hoja nueva.');return true
   }catch(e){
     console.error('Google Sheets:',e);googleConnectionIssue=e.message||'Vuelve a conectar Google.';googleSheetsMeta.pendingAt=googleSheetsMeta.pendingAt||new Date().toISOString();
     await persistGoogleSheetsMeta().catch(()=>{});renderGoogleSheetsState();if(showResult)showToast('No se pudo actualizar Google Sheets',googleConnectionIssue,'bad');return false
