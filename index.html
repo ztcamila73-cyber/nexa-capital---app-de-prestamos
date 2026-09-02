@@ -732,7 +732,9 @@ const NEXA_FIREBASE_CONFIG={
    Origen autorizado: https://progama-seven.vercel.app
    APIs requeridas: Google Sheets API + Google Drive API. */
 const NEXA_GOOGLE_OAUTH_CLIENT_ID="427027770809-8f1kngmiep6lpgin019hdmobnuiro7mc.apps.googleusercontent.com";
-// Alcance mínimo: solo archivos de Google Drive creados/usados por NEXA.
+const NEXA_GOOGLE_ALLOWED_ORIGIN="https://progama-seven.vercel.app";
+const NEXA_GOOGLE_OAUTH_BUILD="v16";
+// Alcance mínimo recomendado por Google: solo archivos creados/usados por NEXA.
 const NEXA_GOOGLE_SCOPES="https://www.googleapis.com/auth/drive.file";
 
 const APP_KEY='NEXA_CAPITAL_LOCAL_V1';
@@ -1059,36 +1061,55 @@ function renderGoogleSheetsState(){
 }
 function requestGoogleAccess(){
   return new Promise((resolve,reject)=>{
-    if(!googleSheetsConfigured())return reject(new Error('Falta pegar el OAuth Client ID web propio de NEXA en el código.'));
-    if(!window.google?.accounts?.oauth2)return reject(new Error('Google todavía no terminó de cargar. Espera unos segundos e inténtalo otra vez.'));
+    let settled=false;
+    const finishOk=(token)=>{if(settled)return;settled=true;resolve(token)};
+    const finishBad=(err)=>{if(settled)return;settled=true;reject(err instanceof Error?err:new Error(String(err||'Error de Google')))};
+    if(!googleSheetsConfigured())return finishBad(new Error('Falta configurar el OAuth Client ID web propio de NEXA.'));
+    if(location.origin!==NEXA_GOOGLE_ALLOWED_ORIGIN && !/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(location.origin)){
+      return finishBad(new Error(`Origen incorrecto para Google OAuth: ${location.origin}. El OAuth de NEXA está preparado para ${NEXA_GOOGLE_ALLOWED_ORIGIN}.`));
+    }
+    if(!window.google?.accounts?.oauth2)return finishBad(new Error('Google todavía no terminó de cargar. Espera unos segundos e inténtalo otra vez.'));
     try{
       googleSheetsTokenClient=google.accounts.oauth2.initTokenClient({
         client_id:NEXA_GOOGLE_OAUTH_CLIENT_ID,
         scope:NEXA_GOOGLE_SCOPES,
+        include_granted_scopes:true,
         callback:(resp)=>{
           if(resp?.error){
             const code=String(resp.error||'');
             const desc=String(resp.error_description||'');
-            if(code==='access_denied')return reject(new Error('Google no recibió autorización. Vuelve a conectar y acepta el permiso para crear y actualizar el respaldo.'));
-            return reject(new Error(desc||code||'Google no pudo autorizar la cuenta.'))
+            if(code==='access_denied'){
+              return finishBad(new Error('Google rechazó la autorización. Si NEXA está en modo Prueba, agrega esta cuenta en Google Auth Platform → Público → Usuarios de prueba y vuelve a conectar.'));
+            }
+            return finishBad(new Error(desc||code||'Google no pudo autorizar la cuenta.'));
           }
           googleAccessToken=resp?.access_token||'';
-          if(!googleAccessToken)return reject(new Error('Google no entregó autorización.'));
+          if(!googleAccessToken)return finishBad(new Error('Google no entregó un token de autorización.'));
           googleConnectionIssue='';
           googleSheetsMeta.googleConnected=true;
           googleSheetsMeta.connectedAt=googleSheetsMeta.connectedAt||new Date().toISOString();
           persistGoogleSheetsMeta().catch(()=>{});
-          renderGoogleSheetsState();resolve(googleAccessToken)
+          renderGoogleSheetsState();
+          finishOk(googleAccessToken);
         },
         error_callback:(err)=>{
-          const type=String(err?.type||'');
-          if(type==='popup_failed_to_open')return reject(new Error('El navegador bloqueó la ventana de Google. Permite ventanas emergentes para NEXA e inténtalo otra vez.'));
-          if(type==='popup_closed')return reject(new Error('La ventana de Google se cerró antes de terminar la conexión.'));
-          reject(new Error('Google no pudo abrir la autorización. Revisa que '+location.origin+' esté autorizado en el OAuth Client.'))
+          const type=String(err?.type||'unknown');
+          if(type==='popup_failed_to_open'){
+            return finishBad(new Error('El navegador bloqueó la ventana de Google. Permite ventanas emergentes para NEXA e inténtalo otra vez.'));
+          }
+          if(type==='popup_closed'){
+            // Google puede cerrar la ventana prácticamente al mismo tiempo que entrega el token.
+            // Esperamos un instante para no convertir una autorización correcta en un falso error.
+            return setTimeout(()=>{
+              if(settled||googleAccessToken)return;
+              finishBad(new Error(`Google cerró la ventana sin devolver autorización. Si dentro viste “Acceso bloqueado” o “Error 400”, revisa Google Auth Platform → Público → Usuarios de prueba. Esta versión usa OAuth NEXA ${NEXA_GOOGLE_OAUTH_BUILD}, cliente ${NEXA_GOOGLE_OAUTH_CLIENT_ID.split('-')[0]}-…-${NEXA_GOOGLE_OAUTH_CLIENT_ID.replace('.apps.googleusercontent.com','').slice(-6)} y origen ${location.origin}.`));
+            },900);
+          }
+          finishBad(new Error(`Google no pudo completar la autorización (${type}). Cliente OAuth NEXA ${NEXA_GOOGLE_OAUTH_CLIENT_ID.split('-')[0]}-…-${NEXA_GOOGLE_OAUTH_CLIENT_ID.replace('.apps.googleusercontent.com','').slice(-6)} · origen ${location.origin}.`));
         }
       });
-      googleSheetsTokenClient.requestAccessToken({prompt:googleAccessToken?'':'consent'})
-    }catch(e){reject(e)}
+      googleSheetsTokenClient.requestAccessToken({prompt:googleAccessToken?'':'select_account consent'});
+    }catch(e){finishBad(e)}
   })
 }
 async function googleApi(url,options={}){
