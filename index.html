@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#123F3A">
+<title>NEXA CAPITAL · Gestión de préstamos</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
+<style>
+:root{
+  --bg:#f4f7f6;--card:#fff;--ink:#17211f;--muted:#6d7875;--line:#dfe7e4;
+  --brand:#123f3a;--brand2:#1c6259;--brand-soft:#e6f1ee;--gold:#a87824;--gold-soft:#fbf1df;
+  --green:#178358;--green-soft:#e8f6ef;--orange:#b06a08;--orange-soft:#fff2df;
+  --red:#b93b3b;--red-soft:#fdeaea;--blue:#2d61b8;--blue-soft:#eaf1ff;
+  --shadow:0 14px 40px rgba(18,63,58,.08);--radius:20px;
+}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink)}
+button,input,select,textarea{font:inherit}button{cursor:pointer}.hidden{display:none!important}
+input,select,textarea{font-size:16px}.app-shell{min-height:100vh}.screen{min-height:100vh}
+.auth{display:grid;place-items:center;padding:22px;background:radial-gradient(circle at 50% -8%,#fff 0,#f4f8f7 42%,#eaf0ee 100%)}
+.auth-card{width:min(420px,100%);background:rgba(255,255,255,.95);border:1px solid var(--line);border-radius:30px;padding:30px;box-shadow:0 28px 80px rgba(18,63,58,.13)}
+.logo-row{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:8px}.logo-mark{width:56px;height:56px;border-radius:18px;background:linear-gradient(145deg,var(--brand2),var(--brand));color:#fff;display:grid;place-items:center;font-weight:900;font-size:24px}.logo{font-size:30px;font-weight:900;letter-spacing:-1.6px}.tagline{text-align:center;color:var(--muted);margin:0 0 24px}.label{font-size:12px;font-weight:800;color:#596562;display:block;margin:0 0 6px}.input{width:100%;padding:13px 14px;border:1px solid var(--line);border-radius:14px;background:#fff;outline:none;margin:0 0 14px}.input:focus{border-color:#88aaa4;box-shadow:0 0 0 4px rgba(18,63,58,.07)}
+.primary,.secondary,.ghost,.danger{min-height:44px;border-radius:13px;padding:10px 14px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;gap:8px}.primary{border:0;background:var(--brand);color:#fff}.secondary{border:1px solid var(--line);background:#fff;color:var(--ink)}.ghost{border:0;background:transparent;color:var(--brand)}.danger{border:1px solid #efc6c6;background:#fff6f6;color:var(--red)}.full{width:100%}.small{font-size:12px}.muted{color:var(--muted)}.linkline{display:flex;justify-content:flex-end;margin:-6px 0 12px}.text-link{border:0;background:transparent;color:var(--brand);padding:0;font-size:13px;font-weight:750}.divider{height:1px;background:var(--line);margin:18px 0}.setup-note{margin-top:16px;padding:12px;border-radius:14px;background:var(--gold-soft);color:#79571c;font-size:12px;line-height:1.45}
+.toast-stack{position:fixed;z-index:100;top:12px;left:12px;right:12px;display:grid;gap:8px;pointer-events:none}.toast{margin-left:auto;width:min(420px,100%);background:#fff;border:1px solid var(--line);border-radius:16px;padding:13px 14px;box-shadow:0 18px 50px rgba(0,0,0,.16);display:flex;gap:10px;align-items:flex-start;pointer-events:auto}.toast.good{border-color:#bfe5d3}.toast.bad{border-color:#efc2c2}.toast b{display:block;margin-bottom:2px}
+.business-select{padding:22px 18px 90px;max-width:760px;margin:0 auto}.select-head{text-align:center;padding:18px 0 24px}.select-head h1{margin:0;font-size:29px;letter-spacing:-1.2px}.business-grid{display:grid;gap:12px}.business-card{width:100%;border:1px solid var(--line);background:#fff;border-radius:20px;padding:18px;text-align:left;box-shadow:var(--shadow);display:flex;align-items:center;gap:14px}.business-icon{width:48px;height:48px;border-radius:15px;background:var(--brand-soft);color:var(--brand);display:grid;place-items:center;font-size:22px;font-weight:900}.business-card b{font-size:17px}.business-card span{display:block;color:var(--muted);font-size:12px;margin-top:3px}.business-card.add{border-style:dashed;box-shadow:none;background:transparent}.top-actions{display:flex;justify-content:center;gap:8px;margin-top:18px;flex-wrap:wrap}
+.main-app{padding-bottom:82px}.topbar{position:sticky;top:0;z-index:30;background:rgba(244,247,246,.94);backdrop-filter:blur(16px);border-bottom:1px solid rgba(223,231,228,.9);padding:10px 14px}.topbar-inner{max-width:1180px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:10px}.business-switch{min-width:0;border:0;background:transparent;padding:4px 0;text-align:left}.business-switch .eyebrow{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);font-weight:800}.business-switch .business-name{display:flex;align-items:center;gap:5px;font-size:18px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:230px}.cloud-pill{font-size:11px;padding:7px 9px;border-radius:999px;background:#edf1f0;color:#60706c;white-space:nowrap}.cloud-pill.ok{background:var(--green-soft);color:var(--green)}.cloud-pill.work{background:var(--orange-soft);color:var(--orange)}.cloud-pill.bad{background:var(--red-soft);color:var(--red)}
+.content{max-width:1180px;margin:auto;padding:15px 14px 30px}.page{display:none}.page.active{display:block}.page-title{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin:4px 0 14px}.page-title h1{margin:0;font-size:25px;letter-spacing:-1px}.page-title p{margin:4px 0 0;color:var(--muted);font-size:12px}.card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow)}.card.flat{box-shadow:none}.stack{display:grid;gap:12px}.grid2{display:grid;grid-template-columns:1fr;gap:12px}.stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.stat-card{background:#fff;border:1px solid var(--line);border-radius:17px;padding:14px;min-width:0}.stat-label{font-size:11px;color:var(--muted);margin-bottom:6px}.stat-value{font-size:20px;font-weight:900;letter-spacing:-.7px;overflow-wrap:anywhere}.stat-card.dark{background:var(--brand);color:#fff;border-color:var(--brand)}.stat-card.dark .stat-label{color:#cbdad6}.stat-card.dark .stat-value{color:#f4dba7}.section-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}.section-head h2{margin:0;font-size:18px}.section-head .small{color:var(--muted)}
+.searchbox{display:flex;gap:8px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:15px;padding:4px 5px 4px 12px}.searchbox input{flex:1;min-width:0;border:0;outline:none;background:transparent;font-size:16px}.searchbox button{border:0;background:var(--brand);color:#fff;width:42px;height:42px;border-radius:12px;font-weight:900}.quick-actions{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.quick-btn{border:1px solid var(--line);background:#fff;border-radius:17px;padding:15px 10px;min-height:86px;text-align:left}.quick-btn .qicon{font-size:22px}.quick-btn b{display:block;margin-top:6px}.quick-btn span{display:block;font-size:11px;color:var(--muted);margin-top:3px}
+.alert-list,.client-list,.loan-list,.movement-list{display:grid;gap:9px}.alert-item,.client-item,.loan-item,.movement-item{border:1px solid var(--line);background:#fff;border-radius:16px;padding:13px}.alert-item{display:flex;align-items:center;justify-content:space-between;gap:10px}.alert-left{min-width:0}.alert-name{font-weight:850}.alert-meta{font-size:11px;color:var(--muted);margin-top:3px}.alert-value{text-align:right;font-weight:900}.alert-status{display:inline-flex;margin-top:4px;padding:4px 7px;border-radius:999px;font-size:10px;font-weight:850}.s-overdue{background:var(--red-soft);color:var(--red)}.s-today{background:var(--orange-soft);color:var(--orange)}.s-upcoming{background:var(--blue-soft);color:var(--blue)}.s-ok{background:var(--green-soft);color:var(--green)}
+.tabs{display:flex;gap:7px;overflow-x:auto;padding-bottom:4px;margin-bottom:12px;scrollbar-width:none}.tabs::-webkit-scrollbar{display:none}.tab{border:1px solid var(--line);background:#fff;border-radius:999px;padding:9px 12px;white-space:nowrap;font-size:12px;font-weight:800}.tab.active{background:var(--brand);color:#fff;border-color:var(--brand)}.client-item{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.client-main{min-width:0}.client-name{font-weight:900}.client-phone{font-size:12px;color:var(--muted);margin-top:3px}.client-badges{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.badge{display:inline-flex;padding:5px 8px;border-radius:999px;font-size:10px;font-weight:850}.b-active{background:var(--green-soft);color:var(--green)}.b-cancel{background:#eef1f0;color:#5c6966}.b-pending{background:var(--orange-soft);color:var(--orange)}.client-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}.mini-btn{border:1px solid var(--line);background:#fff;border-radius:10px;padding:7px 9px;font-size:11px;font-weight:800}
+.form-grid{display:grid;grid-template-columns:1fr;gap:0}.form-row{display:grid;grid-template-columns:1fr;gap:0}.calc-box{border:1px solid #d8e7e3;background:#f6fbf9;border-radius:17px;padding:15px;margin:4px 0 14px}.calc-title{font-size:12px;color:var(--muted);font-weight:800}.calc-value{font-size:30px;font-weight:950;color:var(--brand);letter-spacing:-1.3px;margin-top:4px}.calc-formula{font-size:11px;color:var(--muted);margin-top:4px}.found-client{margin:-2px 0 14px;padding:11px 12px;background:var(--green-soft);color:#176246;border-radius:13px;font-size:12px}.notice{padding:12px 13px;border-radius:14px;font-size:12px;line-height:1.45}.notice.info{background:var(--blue-soft);color:#2c5594}.notice.warn{background:var(--orange-soft);color:#7a510d}.notice.good{background:var(--green-soft);color:#1f6549}
+.loan-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.loan-summary>div{border:1px solid var(--line);border-radius:14px;padding:11px;background:#fafcfc}.loan-summary span{display:block;font-size:10px;color:var(--muted);margin-bottom:4px}.loan-summary b{font-size:16px}.loan-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:10px}.loan-title{font-weight:900}.loan-sub{font-size:11px;color:var(--muted);margin-top:3px}.loan-status{display:inline-flex;padding:5px 8px;border-radius:999px;font-size:10px;font-weight:900}.loan-status.active{background:var(--green-soft);color:var(--green)}.loan-status.pending{background:var(--orange-soft);color:var(--orange)}.loan-status.cancelled{background:#eef1f0;color:#5e6c68}.loan-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:11px}
+.payment-box{background:#fff;border:1px solid var(--line);border-radius:18px;padding:15px}.payment-preview{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:5px 0 14px}.preview-cell{padding:11px;border-radius:13px;background:#f6f8f7}.preview-cell span{display:block;font-size:10px;color:var(--muted)}.preview-cell b{display:block;margin-top:4px;font-size:16px}.recalc{margin-top:12px;border:2px solid #d1a754;background:#fff9eb;border-radius:18px;padding:15px}.recalc h3{margin:0 0 9px;color:#795515;font-size:16px}.recalc-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.recalc-grid div{font-size:11px;color:#765c2b}.recalc-grid b{display:block;color:#332a1c;font-size:15px;margin-top:2px}.recalc .new-interest{grid-column:1/-1;background:#fff;border-radius:12px;padding:10px;border:1px solid #ead5a5}.recalc .new-interest b{font-size:22px;color:#8a5e0f}
+.collection-item{border:1px solid var(--line);background:#fff;border-radius:17px;padding:14px}.collection-top{display:flex;justify-content:space-between;gap:10px}.collection-name{font-weight:900}.collection-due{font-size:11px;color:var(--muted);margin-top:3px}.collection-amount{text-align:right}.collection-amount b{display:block;font-size:18px}.collection-actions{display:flex;gap:7px;margin-top:10px;flex-wrap:wrap}
+.more-grid{display:grid;gap:12px}.setting-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--line)}.setting-row:last-child{border-bottom:0}.setting-title{font-weight:850}.setting-sub{font-size:11px;color:var(--muted);margin-top:3px}.year-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}.year-box{padding:11px;border:1px solid var(--line);border-radius:14px;background:#fafafa}.year-box span{font-size:10px;color:var(--muted);display:block}.year-box b{font-size:17px;margin-top:3px;display:block}
+.bottom-nav{position:fixed;z-index:40;left:0;right:0;bottom:0;background:rgba(255,255,255,.96);backdrop-filter:blur(16px);border-top:1px solid var(--line);padding:7px 8px calc(7px + env(safe-area-inset-bottom));display:grid;grid-template-columns:repeat(5,1fr)}.nav-btn{border:0;background:transparent;color:#6c7875;min-width:0;padding:5px 3px;font-size:10px;font-weight:800}.nav-btn .nav-icon{display:block;font-size:20px;line-height:1.1;margin-bottom:3px}.nav-btn.active{color:var(--brand)}.nav-btn.center .nav-icon{width:42px;height:42px;border-radius:50%;background:var(--brand);color:#fff;display:grid;place-items:center;margin:-17px auto 2px;font-size:23px;box-shadow:0 8px 22px rgba(18,63,58,.28)}
+.modal{position:fixed;z-index:80;inset:0;background:rgba(10,20,18,.56);display:flex;align-items:flex-end;justify-content:center;padding:0}.modal-card{width:100%;max-height:92vh;overflow:auto;background:#fff;border-radius:26px 26px 0 0;padding:18px 16px 28px;box-shadow:0 -20px 60px rgba(0,0,0,.2)}.modal-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}.modal-head h2{margin:0;font-size:21px}.close{border:0;background:#eef1f0;border-radius:50%;width:38px;height:38px;font-size:20px}.movement-item{padding:12px}.movement-top{display:flex;justify-content:space-between;gap:10px}.movement-concept{font-weight:850}.movement-date{font-size:11px;color:var(--muted)}.movement-values{display:flex;gap:7px;flex-wrap:wrap;margin-top:7px;font-size:11px}.mv-interest{color:var(--blue);background:var(--blue-soft);padding:5px 7px;border-radius:9px}.mv-capital{color:var(--green);background:var(--green-soft);padding:5px 7px;border-radius:9px}.mv-recalc{color:#805b16;background:var(--gold-soft);padding:5px 7px;border-radius:9px}.empty{text-align:center;padding:28px 14px;color:var(--muted);font-size:13px}
+.desktop-only{display:none}
+@media(min-width:760px){
+  .content{padding:22px 22px 40px}.page-title h1{font-size:30px}.grid2{grid-template-columns:1fr 1fr}.stats{grid-template-columns:repeat(4,1fr)}.quick-actions{grid-template-columns:repeat(4,1fr)}.form-grid{grid-template-columns:1fr 1fr;gap:0 12px}.form-grid .fullcol{grid-column:1/-1}.loan-summary{grid-template-columns:repeat(4,1fr)}.payment-preview{grid-template-columns:repeat(4,1fr)}.year-summary{grid-template-columns:repeat(4,1fr)}.modal{align-items:center;padding:24px}.modal-card{max-width:760px;border-radius:24px;padding:22px;max-height:90vh}.desktop-only{display:block}
+}
+@media(min-width:980px){
+  .main-app{padding-bottom:30px}.bottom-nav{position:sticky;top:65px;bottom:auto;max-width:1180px;margin:12px auto 0;border:1px solid var(--line);border-radius:16px;padding:6px;grid-template-columns:repeat(5,1fr);background:#fff}.nav-btn{font-size:12px;padding:9px}.nav-btn .nav-icon{display:inline;margin:0 6px 0 0;font-size:16px}.nav-btn.center .nav-icon{display:inline;background:transparent;color:inherit;width:auto;height:auto;margin:0 6px 0 0;box-shadow:none;font-size:16px}.more-grid{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+<div id="toastStack" class="toast-stack"></div>
+
+<section id="authScreen" class="screen auth">
+  <div class="auth-card">
+    <div class="logo-row"><div class="logo-mark">N</div><div class="logo">NEXA CAPITAL</div></div>
+    <p class="tagline">Control claro de préstamos, capital e intereses.</p>
+
+    <div id="loginBox">
+      <label class="label">Correo</label><input id="loginEmail" class="input" type="email" autocomplete="email" placeholder="correo@ejemplo.com">
+      <label class="label">Contraseña</label><input id="loginPass" class="input" type="password" autocomplete="current-password" placeholder="••••••••">
+      <div class="linkline"><button class="text-link" type="button" data-action="show-forgot">¿Olvidaste tu contraseña?</button></div>
+      <button class="primary full" type="button" data-action="login">Entrar</button>
+      <div class="divider"></div>
+      <button class="secondary full" type="button" data-action="show-register">Crear cuenta</button>
+    </div>
+
+    <div id="registerBox" class="hidden">
+      <label class="label">Nombre</label><input id="regName" class="input" autocomplete="name" placeholder="Tu nombre">
+      <label class="label">Correo</label><input id="regEmail" class="input" type="email" autocomplete="email" placeholder="correo@ejemplo.com">
+      <label class="label">Contraseña</label><input id="regPass" class="input" type="password" autocomplete="new-password" placeholder="Mínimo 6 caracteres">
+      <button class="primary full" type="button" data-action="register">Crear cuenta</button>
+      <button class="secondary full" style="margin-top:9px" type="button" data-action="show-login">Volver</button>
+    </div>
+
+    <div id="forgotBox" class="hidden">
+      <label class="label">Correo</label><input id="forgotEmail" class="input" type="email" placeholder="correo@ejemplo.com">
+      <button class="primary full" type="button" data-action="reset-password">Enviar enlace</button>
+      <button class="secondary full" style="margin-top:9px" type="button" data-action="show-login">Volver</button>
+    </div>
+
+    <div id="firebaseSetupNote" class="setup-note hidden"><b>Falta conectar el Firebase nuevo.</b><br>Busca <b>NEXA_FIREBASE_CONFIG</b> al final de este archivo y pega allí la configuración del proyecto Firebase exclusivo de esta aplicación.</div>
+  </div>
+</section>
+
+<section id="businessScreen" class="screen hidden">
+  <div class="business-select">
+    <div class="select-head"><div class="logo-mark" style="margin:0 auto 12px">N</div><h1>Tus negocios</h1><p class="muted small">Selecciona el negocio que vas a administrar.</p></div>
+    <div id="businessGrid" class="business-grid"></div>
+    <div class="top-actions"><button class="secondary" type="button" data-action="logout">Cerrar sesión</button></div>
+  </div>
+</section>
+
+<section id="mainScreen" class="screen main-app hidden">
+  <header class="topbar"><div class="topbar-inner">
+    <button id="businessSwitch" class="business-switch" type="button" data-action="business-selector"><span class="eyebrow">Negocio activo</span><span class="business-name"><span id="activeBusinessName">—</span> ▾</span></button>
+    <div id="cloudPill" class="cloud-pill">Conectando…</div>
+  </div></header>
+
+  <nav class="bottom-nav" aria-label="Navegación principal">
+    <button class="nav-btn active" data-page="home" type="button"><span class="nav-icon">⌂</span>Inicio</button>
+    <button class="nav-btn" data-page="clients" type="button"><span class="nav-icon">👥</span>Clientes</button>
+    <button class="nav-btn center" data-page="newLoan" type="button"><span class="nav-icon">＋</span>Préstamo</button>
+    <button class="nav-btn" data-page="collections" type="button"><span class="nav-icon">$</span>Cobros</button>
+    <button class="nav-btn" data-page="more" type="button"><span class="nav-icon">☰</span>Más</button>
+  </nav>
+
+  <main class="content">
+    <section id="page-home" class="page active">
+      <div class="page-title"><div><h1>Inicio</h1><p id="homeDate"></p></div></div>
+      <div class="stack">
+        <div class="card flat">
+          <div class="section-head"><h2>Buscar cliente</h2><span class="small">Nombre o teléfono</span></div>
+          <div class="searchbox"><input id="homeSearch" placeholder="Ej. Andrés o 3001234567"><button type="button" data-action="home-search">⌕</button></div>
+          <div id="homeSearchResults" style="margin-top:10px"></div>
+        </div>
+
+        <div id="homeStats" class="stats"></div>
+
+        <div class="card flat">
+          <div class="section-head"><h2>Accesos rápidos</h2></div>
+          <div class="quick-actions">
+            <button class="quick-btn" type="button" data-page-jump="newLoan"><span class="qicon">＋</span><b>Nuevo préstamo</b><span>Cliente nuevo o recurrente</span></button>
+            <button class="quick-btn" type="button" data-page-jump="collections"><span class="qicon">$</span><b>Registrar cobro</b><span>Interés y/o capital</span></button>
+            <button class="quick-btn" type="button" data-page-jump="clients"><span class="qicon">⌕</span><b>Buscar cliente</b><span>Ver toda su historia</span></button>
+            <button class="quick-btn" type="button" data-page-jump="more"><span class="qicon">↻</span><b>Historial</b><span>Revisar información por año</span></button>
+          </div>
+        </div>
+
+        <div class="card flat">
+          <div class="section-head"><div><h2>Alertas mensuales</h2><div class="small">Solo del negocio seleccionado</div></div></div>
+          <div id="homeAlerts" class="alert-list"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="page-clients" class="page">
+      <div class="page-title"><div><h1>Clientes</h1><p>Busca y consulta todo el historial del cliente.</p></div></div>
+      <div class="card flat" style="margin-bottom:12px"><div class="searchbox"><input id="clientSearch" placeholder="Buscar nombre o teléfono"><button type="button" data-action="client-search">⌕</button></div></div>
+      <div class="tabs" id="clientTabs">
+        <button class="tab active" data-client-filter="all" type="button">Todos</button>
+        <button class="tab" data-client-filter="active" type="button">Préstamo activo</button>
+        <button class="tab" data-client-filter="cancelled" type="button">Cancelados</button>
+        <button class="tab" data-client-filter="year" type="button">Del año</button>
+      </div>
+      <div id="clientYearWrap" class="hidden" style="max-width:170px;margin-bottom:12px"><label class="label">Año</label><select id="clientYear" class="input"></select></div>
+      <div id="clientsList" class="client-list"></div>
+    </section>
+
+    <section id="page-newLoan" class="page">
+      <div class="page-title"><div><h1>Nuevo préstamo</h1><p>Las condiciones pertenecen a este préstamo, no al cliente.</p></div></div>
+      <div class="card flat">
+        <div class="form-grid">
+          <div><label class="label">Teléfono del cliente</label><input id="loanClientPhone" class="input" inputmode="tel" placeholder="3001234567"></div>
+          <div><label class="label">Nombre del cliente</label><input id="loanClientName" class="input" placeholder="Nombre completo"></div>
+          <div id="existingClientNote" class="found-client hidden fullcol"></div>
+          <div><label class="label">Fecha del préstamo</label><input id="loanStartDate" class="input" type="date"></div>
+          <div><label class="label">Primera fecha de pago de interés</label><input id="loanFirstDue" class="input" type="date"></div>
+          <div><label class="label">Monto prestado</label><input id="loanAmount" class="input" inputmode="numeric" placeholder="$ 500.000"></div>
+          <div><label class="label">Tasa de interés mensual (%)</label><input id="loanRate" class="input" type="number" min="0" step="0.01" placeholder="20"></div>
+          <div class="fullcol"><div class="calc-box"><div class="calc-title">Cuota mensual de interés calculada automáticamente</div><div id="loanInterestCalc" class="calc-value">$ 0</div><div id="loanInterestFormula" class="calc-formula">Monto × tasa mensual</div></div></div>
+          <div class="fullcol notice info"><b>Regla:</b> pagar interés no disminuye el capital. Solo un abono a capital reduce el saldo y recalcula la cuota de interés.</div>
+          <div class="fullcol" style="margin-top:14px"><button class="primary full" type="button" data-action="save-loan">Guardar préstamo</button></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="page-collections" class="page">
+      <div class="page-title"><div><h1>Cobros</h1><p>Intereses, capital y vencimientos del negocio.</p></div></div>
+      <div class="card flat" style="margin-bottom:12px"><div class="searchbox"><input id="collectionSearch" placeholder="Buscar cliente para registrar pago"><button type="button" data-action="collection-search">⌕</button></div></div>
+      <div class="tabs" id="collectionTabs">
+        <button class="tab active" data-collection-filter="all" type="button">Todos activos</button>
+        <button class="tab" data-collection-filter="overdue" type="button">Vencidos</button>
+        <button class="tab" data-collection-filter="today" type="button">Hoy</button>
+        <button class="tab" data-collection-filter="upcoming" type="button">Próximos</button>
+      </div>
+      <div id="collectionsList" class="loan-list"></div>
+    </section>
+
+    <section id="page-more" class="page">
+      <div class="page-title"><div><h1>Más</h1><p>Historial, negocios, nube y respaldos.</p></div></div>
+      <div class="more-grid">
+        <div class="card flat">
+          <div class="section-head"><h2>Historial por año</h2></div>
+          <label class="label">Año</label><select id="historyYear" class="input"></select>
+          <div id="historySummary" class="year-summary"></div>
+          <div id="historyMovements" class="movement-list" style="margin-top:12px"></div>
+        </div>
+        <div class="card flat">
+          <div class="section-head"><h2>Negocio</h2></div>
+          <div class="setting-row"><div><div class="setting-title" id="settingsBusinessName">—</div><div class="setting-sub">Negocio seleccionado actualmente</div></div><button class="mini-btn" type="button" data-action="rename-business">Renombrar</button></div>
+          <div class="setting-row"><div><div class="setting-title">Cambiar negocio</div><div class="setting-sub">Los datos no se mezclan entre negocios.</div></div><button class="mini-btn" type="button" data-action="business-selector">Cambiar</button></div>
+          <div class="setting-row"><div><div class="setting-title">Crear otro negocio</div><div class="setting-sub">Puedes agregar más de tres.</div></div><button class="mini-btn" type="button" data-action="create-business">Crear</button></div>
+        </div>
+        <div class="card flat">
+          <div class="section-head"><h2>Protección de datos</h2></div>
+          <div class="setting-row"><div><div class="setting-title">Firebase</div><div id="firebaseStateText" class="setting-sub">—</div></div><button class="mini-btn" type="button" data-action="verify-cloud">Verificar</button></div>
+          <div class="setting-row"><div><div class="setting-title">Respaldo manual</div><div class="setting-sub">Guarda una copia adicional en Firebase.</div></div><button class="mini-btn" type="button" data-action="cloud-backup">Crear</button></div>
+          <div class="setting-row"><div><div class="setting-title">Respaldo descargable</div><div class="setting-sub">Descarga todos tus negocios, clientes, préstamos y movimientos.</div></div><button class="mini-btn" type="button" data-action="download-backup">Descargar</button></div>
+        </div>
+        <div class="card flat">
+          <div class="section-head"><h2>Cuenta</h2></div>
+          <div class="setting-row"><div><div class="setting-title" id="accountName">—</div><div class="setting-sub" id="accountEmail">—</div></div></div>
+          <button class="danger full" type="button" data-action="logout">Cerrar sesión</button>
+        </div>
+      </div>
+    </section>
+  </main>
+</section>
+
+<div id="modal" class="modal hidden"><div class="modal-card"><div class="modal-head"><h2 id="modalTitle">Detalle</h2><button class="close" type="button" data-action="close-modal">×</button></div><div id="modalContent"></div></div></div>
+
+<script>
+/* ============================================================
+   NEXA CAPITAL · FIREBASE NUEVO
+   1) Crea un proyecto Firebase exclusivo para esta app.
+   2) Activa Authentication > Email/Password.
+   3) Crea Realtime Database.
+   4) Pega aquí el firebaseConfig de esa app Web.
+   ============================================================ */
+const NEXA_FIREBASE_CONFIG={
+  apiKey:"PEGA_AQUI",
+  authDomain:"TU-PROYECTO.firebaseapp.com",
+  databaseURL:"https://TU-PROYECTO-default-rtdb.firebaseio.com",
+  projectId:"TU-PROYECTO",
+  storageBucket:"TU-PROYECTO.appspot.com",
+  messagingSenderId:"PEGA_AQUI",
+  appId:"PEGA_AQUI"
+};
+
+const APP_KEY='NEXA_CAPITAL_LOCAL_V1';
+const CLOUD_OWNER_KEY='NEXA_CAPITAL_CLOUD_OWNER_V1';
+const CLOUD_DIRTY_KEY='NEXA_CAPITAL_DIRTY_V1';
+const CLOUD_UPDATED_KEY='NEXA_CAPITAL_UPDATED_V1';
+const LAST_BACKUP_KEY='NEXA_CAPITAL_LAST_BACKUP_DAY_V1';
+const APP_PATH='loanApp';
+const emptyDB={version:1,businesses:[],clients:[],loans:[],movements:[]};
+let db=loadLocal();
+let currentUser=null,currentBusinessId=null,currentPage='home';
+let clientFilter='all',collectionFilter='all';
+let firebaseApp=null,cloudAuth=null,cloudDb=null,cloudLoading=false,cloudSaveTimer=null,cloudSaveInFlight=false,cloudDirty=false;
+let lastRecalc=null;
+
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
+const id=()=>crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2);
+const money=n=>new Intl.NumberFormat('es-CO',{style:'currency',currency:'COP',maximumFractionDigits:0}).format(Number(n)||0);
+const parseMoney=v=>Number(String(v??'').replace(/[^0-9-]/g,''))||0;
+const roundMoney=n=>Math.round((Number(n)||0)*100)/100;
+const today=()=>{const d=new Date();return datePartsToISO(d.getFullYear(),d.getMonth()+1,d.getDate())};
+function datePartsToISO(y,m,d){return `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`}
+function parseISO(s){const [y,m,d]=String(s||'').split('-').map(Number);return new Date(y||2000,(m||1)-1,d||1,12,0,0)}
+function fmtDate(s){if(!s)return '—';return parseISO(s).toLocaleDateString('es-CO',{day:'2-digit',month:'short',year:'numeric'})}
+function addMonthsISO(s,count=1){const d=parseISO(s),day=d.getDate();d.setDate(1);d.setMonth(d.getMonth()+count);const last=new Date(d.getFullYear(),d.getMonth()+1,0).getDate();d.setDate(Math.min(day,last));return datePartsToISO(d.getFullYear(),d.getMonth()+1,d.getDate())}
+function diffDays(a,b){const A=parseISO(a),B=parseISO(b);return Math.round((B-A)/86400000)}
+function normalizePhone(v){return String(v||'').replace(/\D/g,'')}
+function normalizeName(v){return String(v||'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ')}
+function formatMoneyField(el){const raw=String(el.value||'').replace(/\D/g,'');el.value=raw?new Intl.NumberFormat('es-CO').format(Number(raw)):''}
+function currentBusiness(){return db.businesses.find(b=>b.id===currentBusinessId)||null}
+function businessClients(){return db.clients.filter(c=>c.businessId===currentBusinessId)}
+function businessLoans(){return db.loans.filter(l=>l.businessId===currentBusinessId)}
+function businessMovements(){return db.movements.filter(m=>m.businessId===currentBusinessId)}
+function getClient(clientId){return db.clients.find(c=>c.id===clientId)}
+function getLoan(loanId){return db.loans.find(l=>l.id===loanId)}
+function clientLoans(clientId){return db.loans.filter(l=>l.clientId===clientId&&l.businessId===currentBusinessId).sort((a,b)=>String(b.startDate).localeCompare(String(a.startDate)))}
+function calcInterest(principal,rate){return roundMoney((Number(principal)||0)*(Number(rate)||0)/100)}
+function activeStatus(l){return l.status==='active'||l.status==='interest_pending'}
+function totalInterestOutstanding(l){return roundMoney((l.interestPeriods||[]).reduce((a,p)=>a+Math.max(0,(Number(p.quota)||0)-(Number(p.paid)||0)),0))}
+function earliestOpenPeriod(l){return (l.interestPeriods||[]).filter(p=>(Number(p.quota)||0)>(Number(p.paid)||0)).sort((a,b)=>String(a.dueDate).localeCompare(String(b.dueDate)))[0]||null}
+function loanCurrentQuota(l){return calcInterest(l.principalBalance,l.interestRate)}
+function appState(){return {version:1,businesses:db.businesses||[],clients:db.clients||[],loans:db.loans||[],movements:db.movements||[]}}
+function applyState(state){const s=state||{};db={version:1,businesses:Array.isArray(s.businesses)?s.businesses:[],clients:Array.isArray(s.clients)?s.clients:[],loans:Array.isArray(s.loans)?s.loans:[],movements:Array.isArray(s.movements)?s.movements:[]};normalizeState();localStorage.setItem(APP_KEY,JSON.stringify(db))}
+function loadLocal(){try{return {...structuredClone(emptyDB),...(JSON.parse(localStorage.getItem(APP_KEY)||'null')||{})}}catch(e){return structuredClone(emptyDB)}}
+function normalizeState(){db.businesses||=[];db.clients||=[];db.loans||=[];db.movements||=[];for(const l of db.loans){l.principalOriginal=Number(l.principalOriginal)||0;l.principalBalance=Number(l.principalBalance)||0;l.interestRate=Number(l.interestRate)||0;l.interestPeriods=Array.isArray(l.interestPeriods)?l.interestPeriods:[];l.status=l.status||'active';l.cancelledAt=l.cancelledAt||'';if(!l.interestPeriods.length&&l.principalOriginal>0){const q=calcInterest(l.principalBalance,l.interestRate);l.interestPeriods=[{id:id(),dueDate:l.firstDueDate||addMonthsISO(l.startDate,1),quota:q,paid:0,createdAt:new Date().toISOString()}]}}}
+normalizeState();
+
+function firebaseConfigured(){const c=NEXA_FIREBASE_CONFIG;return !!(c.apiKey&&c.authDomain&&c.databaseURL&&c.projectId&&c.appId&&!String(c.apiKey).includes('PEGA_AQUI')&&!String(c.projectId).includes('TU-PROYECTO'))}
+function cloudPath(uid,suffix=''){return `users/${uid}/${APP_PATH}${suffix?'/'+suffix:''}`}
+function setCloud(kind,text){const pill=$('cloudPill'),s=$('firebaseStateText');if(pill){pill.className='cloud-pill '+(kind||'');pill.textContent=text}if(s)s.textContent=text}
+function firebaseErrorText(e){const code=String(e?.code||'');if(code.includes('invalid-credential')||code.includes('wrong-password'))return 'Correo o contraseña incorrectos.';if(code.includes('email-already-in-use'))return 'Ese correo ya tiene una cuenta.';if(code.includes('weak-password'))return 'La contraseña debe tener al menos 6 caracteres.';if(code.includes('network'))return 'No hay conexión estable a Internet.';return e?.message||code||'Error de Firebase.'}
+function initFirebase(){
+  if(!firebaseConfigured()){$('firebaseSetupNote').classList.remove('hidden');setCloud('bad','Firebase sin configurar');return false}
+  try{firebaseApp=firebase.apps?.length?firebase.app():firebase.initializeApp(NEXA_FIREBASE_CONFIG);cloudAuth=firebase.auth();cloudDb=firebase.database();cloudAuth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});cloudAuth.onAuthStateChanged(async user=>{if(user){currentUser={id:user.uid,email:user.email||'',name:user.displayName||(user.email||'Usuario').split('@')[0]};await loadCloudState(user.uid);openAfterLogin()}else{currentUser=null;showOnly('authScreen')}});return true}catch(e){console.error(e);setCloud('bad','Error Firebase');return false}
+}
+async function loadCloudState(uid){if(!cloudDb)return;cloudLoading=true;setCloud('work','Cargando datos…');try{const snap=await cloudDb.ref(cloudPath(uid,'state')).once('value');const remote=snap.val();if(remote?.data){applyState(remote.data)}else if((db.businesses?.length||0)+(db.clients?.length||0)+(db.loans?.length||0)>0){await cloudDb.ref(cloudPath(uid,'state')).set({data:appState(),updatedAt:new Date().toISOString()})}else{applyState({})}localStorage.setItem(CLOUD_OWNER_KEY,uid);localStorage.setItem(CLOUD_DIRTY_KEY,'0');setCloud('ok','Datos sincronizados')}catch(e){console.error(e);setCloud('bad','Error al cargar nube');showToast('No se pudo cargar Firebase',firebaseErrorText(e),'bad')}finally{cloudLoading=false}}
+function saveLocal(){localStorage.setItem(APP_KEY,JSON.stringify(db));localStorage.setItem(CLOUD_DIRTY_KEY,'1');localStorage.setItem(CLOUD_UPDATED_KEY,new Date().toISOString());queueCloudSave()}
+function queueCloudSave(){if(!cloudDb||!currentUser?.id||cloudLoading)return;cloudDirty=true;clearTimeout(cloudSaveTimer);cloudSaveTimer=setTimeout(()=>cloudSaveNow(false),180)}
+async function cloudSaveNow(notify=true){if(!cloudDb||!currentUser?.id)return false;if(cloudSaveInFlight){cloudDirty=true;return false}cloudSaveInFlight=true;try{do{cloudDirty=false;setCloud('work','Guardando…');const snapshot=appState(),updatedAt=new Date().toISOString();const ref=cloudDb.ref(cloudPath(currentUser.id,'state'));await ref.set({data:snapshot,updatedAt});const check=(await ref.once('value')).val();if(!check||check.updatedAt!==updatedAt)throw new Error('Firebase no confirmó la escritura.');localStorage.setItem(CLOUD_DIRTY_KEY,'0');setCloud('ok','Datos sincronizados');await maybeDailyBackup(snapshot)}while(cloudDirty);if(notify)showToast('Nube verificada','Los datos fueron escritos y leídos nuevamente desde Firebase.');return true}catch(e){console.error(e);setCloud('bad','Pendiente de sincronizar');if(notify)showToast('No se pudo verificar la nube',firebaseErrorText(e),'bad');return false}finally{cloudSaveInFlight=false}}
+async function cloudBackup(reason='manual'){if(!cloudDb||!currentUser?.id)return false;try{const ref=cloudDb.ref(cloudPath(currentUser.id,'backups')).push();await ref.set({reason,createdAt:new Date().toISOString(),data:appState()});showToast('Respaldo creado','Se guardó una copia adicional en Firebase.');return true}catch(e){showToast('No se pudo crear respaldo',firebaseErrorText(e),'bad');return false}}
+async function maybeDailyBackup(snapshot){if(!currentUser?.id)return;const key=LAST_BACKUP_KEY+'_'+currentUser.id;if(localStorage.getItem(key)===today())return;try{const ref=cloudDb.ref(cloudPath(currentUser.id,'backups')).push();await ref.set({reason:'respaldo diario',createdAt:new Date().toISOString(),data:snapshot});localStorage.setItem(key,today())}catch(e){console.warn(e)}}
+
+function showOnly(idToShow){['authScreen','businessScreen','mainScreen'].forEach(x=>$(x).classList.toggle('hidden',x!==idToShow))}
+function showToast(title,text='',kind='good'){const el=document.createElement('div');el.className='toast '+kind;el.innerHTML=`<div>${kind==='bad'?'⚠️':'✓'}</div><div><b>${esc(title)}</b><div class="small muted">${esc(text)}</div></div>`;$('toastStack').appendChild(el);setTimeout(()=>el.remove(),3600)}
+function showLogin(){$('loginBox').classList.remove('hidden');$('registerBox').classList.add('hidden');$('forgotBox').classList.add('hidden')}
+function showRegister(){$('loginBox').classList.add('hidden');$('registerBox').classList.remove('hidden');$('forgotBox').classList.add('hidden')}
+function showForgot(){$('loginBox').classList.add('hidden');$('registerBox').classList.add('hidden');$('forgotBox').classList.remove('hidden');$('forgotEmail').value=$('loginEmail').value||''}
+async function login(){if(!cloudAuth)return showToast('Firebase sin configurar','Primero conecta el proyecto Firebase nuevo.','bad');const email=$('loginEmail').value.trim().toLowerCase(),pass=$('loginPass').value;if(!email||!pass)return showToast('Completa los datos','','bad');try{await cloudAuth.signInWithEmailAndPassword(email,pass)}catch(e){showToast('No se pudo iniciar sesión',firebaseErrorText(e),'bad')}}
+async function register(){if(!cloudAuth)return showToast('Firebase sin configurar','Primero conecta el proyecto Firebase nuevo.','bad');const name=$('regName').value.trim(),email=$('regEmail').value.trim().toLowerCase(),pass=$('regPass').value;if(!name||!email||pass.length<6)return showToast('Revisa los datos','Nombre, correo y contraseña de mínimo 6 caracteres.','bad');try{const cred=await cloudAuth.createUserWithEmailAndPassword(email,pass);await cred.user.updateProfile({displayName:name});currentUser={id:cred.user.uid,email,name};await loadCloudState(cred.user.uid);openAfterLogin()}catch(e){showToast('No se pudo crear la cuenta',firebaseErrorText(e),'bad')}}
+async function resetPassword(){if(!cloudAuth)return showToast('Firebase sin configurar','','bad');const email=$('forgotEmail').value.trim().toLowerCase();if(!email)return showToast('Escribe tu correo','','bad');try{await cloudAuth.sendPasswordResetEmail(email);showLogin();showToast('Revisa tu correo','Se envió el enlace para cambiar la contraseña.')}catch(e){showToast('No se pudo enviar',firebaseErrorText(e),'bad')}}
+async function logout(){if(cloudAuth)await cloudAuth.signOut();currentBusinessId=null;currentUser=null;showOnly('authScreen')}
+
+function openAfterLogin(){if(!currentUser)return;currentBusinessId=localStorage.getItem('NEXA_LAST_BUSINESS_'+currentUser.id)||null;if(!db.businesses.some(b=>b.id===currentBusinessId))currentBusinessId=null;if(currentBusinessId)openBusiness(currentBusinessId);else renderBusinessSelector()}
+function renderBusinessSelector(){showOnly('businessScreen');const grid=$('businessGrid');const businesses=[...db.businesses].sort((a,b)=>String(a.createdAt).localeCompare(String(b.createdAt)));grid.innerHTML=businesses.map((b,i)=>`<button class="business-card" type="button" data-open-business="${b.id}"><div class="business-icon">${i+1}</div><div><b>${esc(b.name)}</b><span>${businessClientCount(b.id)} cliente(s) · ${businessActiveLoanCount(b.id)} préstamo(s) activo(s)</span></div></button>`).join('')+`<button class="business-card add" type="button" data-action="create-business"><div class="business-icon">＋</div><div><b>Crear nuevo negocio</b><span>Agrega otro negocio independiente</span></div></button>`}
+function businessClientCount(businessId){return db.clients.filter(c=>c.businessId===businessId).length}
+function businessActiveLoanCount(businessId){return db.loans.filter(l=>l.businessId===businessId&&activeStatus(l)).length}
+function createBusiness(){const name=prompt('Nombre del nuevo negocio:','Negocio '+(db.businesses.length+1));if(!name?.trim())return;const b={id:id(),name:name.trim(),createdAt:new Date().toISOString()};db.businesses.push(b);saveLocal();showToast('Negocio creado',b.name);if($('businessScreen').classList.contains('hidden')){currentBusinessId=b.id;openBusiness(b.id)}else renderBusinessSelector()}
+function renameBusiness(){const b=currentBusiness();if(!b)return;const name=prompt('Nuevo nombre del negocio:',b.name);if(!name?.trim())return;b.name=name.trim();saveLocal();refreshAll();showToast('Nombre actualizado',b.name)}
+function openBusiness(businessId){currentBusinessId=businessId;localStorage.setItem('NEXA_LAST_BUSINESS_'+currentUser.id,businessId);ensureAllLoansCurrent(today());showOnly('mainScreen');currentPage='home';setPage('home');refreshAll()}
+function setPage(page){currentPage=page;document.querySelectorAll('.page').forEach(x=>x.classList.toggle('active',x.id==='page-'+page));document.querySelectorAll('.nav-btn').forEach(x=>x.classList.toggle('active',x.dataset.page===page));if(page==='newLoan')prepareNewLoanForm();if(page==='clients')renderClients();if(page==='collections')renderCollections();if(page==='more')renderMore();if(page==='home')renderHome();window.scrollTo({top:0,behavior:'smooth'})}
+
+function findExistingClient(phone,name=''){const p=normalizePhone(phone),n=normalizeName(name);return businessClients().find(c=>p&&normalizePhone(c.phone)===p)||businessClients().find(c=>!p&&n&&normalizeName(c.name)===n)||null}
+function findOrCreateClient(name,phone){const existing=findExistingClient(phone,name);if(existing){if(name&&existing.name!==name)existing.name=name;if(phone&&!existing.phone)existing.phone=phone;return existing}const c={id:id(),businessId:currentBusinessId,name:name.trim(),phone:phone.trim(),createdAt:new Date().toISOString()};db.clients.push(c);return c}
+function clientActivityInYear(clientId,year){return db.loans.some(l=>l.clientId===clientId&&String(l.startDate||'').startsWith(String(year)))||db.movements.some(m=>m.clientId===clientId&&String(m.date||'').startsWith(String(year)))}
+
+function prepareNewLoanForm(){const t=today();$('loanStartDate').value=t;$('loanFirstDue').value=addMonthsISO(t,1);$('loanAmount').value='';$('loanRate').value='';$('loanClientPhone').value='';$('loanClientName').value='';$('existingClientNote').classList.add('hidden');updateLoanCalc()}
+function updateExistingClientNote(){const c=findExistingClient($('loanClientPhone').value,$('loanClientName').value);if(c){$('loanClientName').value=c.name;$('existingClientNote').classList.remove('hidden');$('existingClientNote').innerHTML=`Cliente encontrado: <b>${esc(c.name)}</b>. Se usará la misma ficha y este será un préstamo nuevo en su historial.`}else{$('existingClientNote').classList.add('hidden')}}
+function updateLoanCalc(){const amount=parseMoney($('loanAmount').value),rate=Number($('loanRate').value)||0,interest=calcInterest(amount,rate);$('loanInterestCalc').textContent=money(interest);$('loanInterestFormula').textContent=`${money(amount)} × ${rate||0}% = ${money(interest)} por mes`}
+function saveLoan(){
+  const name=$('loanClientName').value.trim(),phone=$('loanClientPhone').value.trim(),startDate=$('loanStartDate').value,firstDue=$('loanFirstDue').value,amount=parseMoney($('loanAmount').value),rate=Number($('loanRate').value)||0;
+  if(!name||!phone||!startDate||!firstDue||amount<=0||rate<=0)return showToast('Faltan datos','Completa cliente, teléfono, fechas, monto y tasa.','bad');
+  if(firstDue<startDate)return showToast('Revisa la fecha','La primera fecha de interés no puede ser anterior al préstamo.','bad');
+  const c=findOrCreateClient(name,phone),quota=calcInterest(amount,rate),loan={id:id(),businessId:currentBusinessId,clientId:c.id,startDate,firstDueDate:firstDue,principalOriginal:amount,principalBalance:amount,interestRate:rate,status:'active',cancelledAt:'',createdAt:new Date().toISOString(),interestPeriods:[{id:id(),dueDate:firstDue,quota,paid:0,createdAt:new Date().toISOString()}]};
+  db.loans.push(loan);db.movements.push({id:id(),businessId:currentBusinessId,clientId:c.id,loanId:loan.id,date:startDate,type:'loan',concept:'Préstamo realizado',interestPaid:0,capitalPaid:0,principalBefore:0,principalAfter:amount,interestBefore:0,interestAfter:quota,createdAt:new Date().toISOString()});saveLocal();showToast('Préstamo guardado',`${c.name} · ${money(amount)} · cuota de interés ${money(quota)}`);setPage('home')
+}
+
+function ensureLoanPeriodsThrough(loan,targetDate){if(!activeStatus(loan)||loan.principalBalance<=0)return;loan.interestPeriods||=[];if(!loan.interestPeriods.length){loan.interestPeriods.push({id:id(),dueDate:loan.firstDueDate||addMonthsISO(loan.startDate,1),quota:loanCurrentQuota(loan),paid:0,createdAt:new Date().toISOString()})}let last=[...loan.interestPeriods].sort((a,b)=>String(a.dueDate).localeCompare(String(b.dueDate))).at(-1);let guard=0;while(last&&last.dueDate<targetDate&&guard<240){const nextDate=addMonthsISO(last.dueDate,1);loan.interestPeriods.push({id:id(),dueDate:nextDate,quota:loanCurrentQuota(loan),paid:0,createdAt:new Date().toISOString()});last=loan.interestPeriods.at(-1);guard++}}
+function ensureNextOpenPeriod(loan){if(loan.principalBalance<=0||loan.status==='cancelled')return;const open=earliestOpenPeriod(loan);if(open)return;const sorted=[...(loan.interestPeriods||[])].sort((a,b)=>String(a.dueDate).localeCompare(String(b.dueDate)));const last=sorted.at(-1);const due=last?addMonthsISO(last.dueDate,1):(loan.firstDueDate||addMonthsISO(loan.startDate,1));loan.interestPeriods.push({id:id(),dueDate:due,quota:loanCurrentQuota(loan),paid:0,createdAt:new Date().toISOString()})}
+function ensureAllLoansCurrent(targetDate){for(const l of businessLoans()){ensureLoanPeriodsThrough(l,targetDate);ensureNextOpenPeriod(l)}saveLocalSilent()}
+function saveLocalSilent(){localStorage.setItem(APP_KEY,JSON.stringify(db))}
+function recalcFuturePeriodAfterCapital(loan,paymentDate,newQuota){for(const p of loan.interestPeriods||[]){if(p.dueDate>paymentDate&&(Number(p.paid)||0)===0){p.quota=newQuota}}
+}
+function loanAlertInfo(loan){ensureLoanPeriodsThrough(loan,today());ensureNextOpenPeriod(loan);const p=earliestOpenPeriod(loan);if(!p)return {kind:'ok',label:'Al día',days:null,period:null};const d=diffDays(today(),p.dueDate);if(d<0)return {kind:'overdue',label:`Vencido hace ${Math.abs(d)} día(s)`,days:d,period:p};if(d===0)return {kind:'today',label:'Paga hoy',days:0,period:p};if(d<=5)return {kind:'upcoming',label:`Vence en ${d} día(s)`,days:d,period:p};return {kind:'ok',label:`Próximo ${fmtDate(p.dueDate)}`,days:d,period:p}}
+
+function openPaymentModal(loanId){const l=getLoan(loanId),c=getClient(l?.clientId);if(!l||!c)return;ensureLoanPeriodsThrough(l,today());ensureNextOpenPeriod(l);const open=earliestOpenPeriod(l),outstanding=totalInterestOutstanding(l);lastRecalc=null;$('modalTitle').textContent='Registrar pago';$('modalContent').innerHTML=`
+  <div class="notice info" style="margin-bottom:12px"><b>${esc(c.name)}</b><br>Préstamo del ${fmtDate(l.startDate)} · tasa ${l.interestRate}% mensual</div>
+  <div class="payment-preview">
+    <div class="preview-cell"><span>Capital pendiente</span><b>${money(l.principalBalance)}</b></div>
+    <div class="preview-cell"><span>Cuota actual</span><b>${money(loanCurrentQuota(l))}</b></div>
+    <div class="preview-cell"><span>Interés pendiente</span><b>${money(outstanding)}</b></div>
+    <div class="preview-cell"><span>Próximo vencimiento</span><b>${open?fmtDate(open.dueDate):'—'}</b></div>
+  </div>
+  <div class="payment-box">
+    <label class="label">Fecha del pago</label><input id="payDate" class="input" type="date" value="${today()}">
+    <label class="label">Pago a interés</label><input id="payInterest" class="input" inputmode="numeric" value="${open?new Intl.NumberFormat('es-CO').format(Math.round((open.quota||0)-(open.paid||0))):''}">
+    <label class="label">Abono a capital</label><input id="payCapital" class="input" inputmode="numeric" placeholder="0">
+    <label class="label">Concepto / nota (opcional)</label><input id="payConcept" class="input" placeholder="Ej. Pago mensual">
+    <div id="payImpact" class="notice good" style="margin-bottom:12px"></div>
+    <button class="primary full" type="button" data-save-payment="${l.id}">Guardar pago</button>
+  </div>
+  <div id="recalcResult"></div>`;
+  ['payInterest','payCapital'].forEach(x=>{$(x).addEventListener('input',e=>{formatMoneyField(e.target);updatePaymentImpact(l.id)})});$('payDate').addEventListener('change',()=>updatePaymentImpact(l.id));updatePaymentImpact(l.id);showModal()
+}
+function updatePaymentImpact(loanId){const l=getLoan(loanId);if(!l)return;const interest=parseMoney($('payInterest')?.value),capital=parseMoney($('payCapital')?.value),principalAfter=Math.max(0,l.principalBalance-capital),newQuota=calcInterest(principalAfter,l.interestRate);const box=$('payImpact');if(box)box.innerHTML=`Vas a registrar <b>${money(interest)}</b> a interés y <b>${money(capital)}</b> a capital.<br>Capital después: <b>${money(principalAfter)}</b>${capital>0?` · Nueva cuota: <b>${money(newQuota)}</b>`:''}`}
+function savePayment(loanId){
+  const l=getLoan(loanId),c=getClient(l?.clientId);if(!l||!c)return;const date=$('payDate').value,interestPay=parseMoney($('payInterest').value),capitalPay=parseMoney($('payCapital').value),concept=$('payConcept').value.trim()||'Pago recibido';if(!date||interestPay<0||capitalPay<0||(interestPay===0&&capitalPay===0))return showToast('Revisa el pago','Indica interés y/o capital.','bad');if(capitalPay>l.principalBalance)return showToast('Abono demasiado alto','El abono a capital no puede superar el capital pendiente.','bad');
+  ensureLoanPeriodsThrough(l,date);ensureNextOpenPeriod(l);const availableInterest=totalInterestOutstanding(l);if(interestPay>availableInterest+0.01)return showToast('Interés superior al pendiente',`Pendiente registrado: ${money(availableInterest)}.`,'bad');
+  const principalBefore=l.principalBalance,quotaBefore=loanCurrentQuota(l),interestOutstandingBefore=totalInterestOutstanding(l);let remaining=interestPay;
+  const periods=[...(l.interestPeriods||[])].sort((a,b)=>String(a.dueDate).localeCompare(String(b.dueDate)));for(const p of periods){if(remaining<=0)break;const due=Math.max(0,(Number(p.quota)||0)-(Number(p.paid)||0));if(!due)continue;const part=Math.min(due,remaining);p.paid=roundMoney((Number(p.paid)||0)+part);remaining=roundMoney(remaining-part)}
+  l.principalBalance=roundMoney(l.principalBalance-capitalPay);const quotaAfter=loanCurrentQuota(l);if(capitalPay>0)recalcFuturePeriodAfterCapital(l,date,quotaAfter);
+  if(l.principalBalance>0)ensureNextOpenPeriod(l);
+  const interestOutstandingAfter=totalInterestOutstanding(l);
+  if(l.principalBalance===0&&interestOutstandingAfter===0){l.status='cancelled';l.cancelledAt=date}else if(l.principalBalance===0){l.status='interest_pending'}else{l.status='active'}
+  db.movements.push({id:id(),businessId:currentBusinessId,clientId:c.id,loanId:l.id,date,type:interestPay>0&&capitalPay>0?'combined_payment':capitalPay>0?'capital_payment':'interest_payment',concept,interestPaid:interestPay,capitalPaid:capitalPay,principalBefore,principalAfter:l.principalBalance,interestBefore:quotaBefore,interestAfter:quotaAfter,interestOutstandingBefore,interestOutstandingAfter,createdAt:new Date().toISOString()});
+  saveLocal();lastRecalc=capitalPay>0?{principalBefore,capitalPay,principalAfter:l.principalBalance,quotaBefore,quotaAfter,rate:l.interestRate}:null;closeModal();refreshAll();if(lastRecalc)openRecalcModal(c,l,lastRecalc);else if(l.status==='cancelled')showToast('Préstamo cancelado',`Quedó saldado el ${fmtDate(date)}.`);else showToast('Pago registrado',`${money(interestPay)} interés · ${money(capitalPay)} capital`)
+}
+function openRecalcModal(c,l,r){$('modalTitle').textContent='Cuota de interés recalculada';$('modalContent').innerHTML=`<div class="recalc"><h3>🔄 Recalculo por abono a capital</h3><div class="recalc-grid"><div>Capital anterior<b>${money(r.principalBefore)}</b></div><div>Abono a capital<b>${money(r.capitalPay)}</b></div><div>Nuevo capital<b>${money(r.principalAfter)}</b></div><div>Tasa mensual<b>${r.rate}%</b></div><div>Cuota anterior<b>${money(r.quotaBefore)}</b></div><div class="new-interest">Nueva cuota de interés<b>${money(r.quotaAfter)}</b></div></div></div><div class="notice info" style="margin-top:12px">${r.principalAfter>0?`A partir del siguiente período, el interés se calcula sobre ${money(r.principalAfter)}.`:'El capital quedó en $0. No se crearán nuevas cuotas. Si hay interés pendiente, debe pagarse para cancelar el préstamo.'}</div><button class="primary full" style="margin-top:12px" type="button" data-action="close-modal">Entendido</button>`;showModal()}
+
+function renderHome(){const b=currentBusiness();if(!b)return;$('activeBusinessName').textContent=b.name;$('homeDate').textContent=new Date().toLocaleDateString('es-CO',{weekday:'long',day:'numeric',month:'long',year:'numeric'});ensureAllLoansCurrent(today());const loans=businessLoans(),active=loans.filter(activeStatus),principal=active.reduce((a,l)=>a+l.principalBalance,0),month=today().slice(0,7),interestMonth=businessMovements().filter(m=>String(m.date).startsWith(month)).reduce((a,m)=>a+(Number(m.interestPaid)||0),0),alerts=active.map(l=>({loan:l,client:getClient(l.clientId),info:loanAlertInfo(l)})),overdue=alerts.filter(x=>x.info.kind==='overdue').length,todayCount=alerts.filter(x=>x.info.kind==='today').length;$('homeStats').innerHTML=`<div class="stat-card dark"><div class="stat-label">Capital pendiente</div><div class="stat-value">${money(principal)}</div></div><div class="stat-card"><div class="stat-label">Préstamos activos</div><div class="stat-value">${active.length}</div></div><div class="stat-card"><div class="stat-label">Intereses cobrados este mes</div><div class="stat-value">${money(interestMonth)}</div></div><div class="stat-card"><div class="stat-label">Hoy / vencidos</div><div class="stat-value">${todayCount} / ${overdue}</div></div>`;const priority=alerts.filter(x=>['overdue','today','upcoming'].includes(x.info.kind)).sort((a,b)=>String(a.info.period?.dueDate).localeCompare(String(b.info.period?.dueDate)));$('homeAlerts').innerHTML=priority.length?priority.map(alertHTML).join(''):'<div class="empty">No hay cobros vencidos ni próximos en los siguientes 5 días.</div>';renderMoreHeader()}
+function alertHTML(x){const p=x.info.period,cls=x.info.kind==='overdue'?'s-overdue':x.info.kind==='today'?'s-today':x.info.kind==='upcoming'?'s-upcoming':'s-ok';return `<div class="alert-item"><div class="alert-left"><div class="alert-name">${esc(x.client?.name||'Cliente')}</div><div class="alert-meta">${fmtDate(p?.dueDate)} · capital ${money(x.loan.principalBalance)}</div><span class="alert-status ${cls}">${esc(x.info.label)}</span></div><div><div class="alert-value">${money(p?Math.max(0,p.quota-p.paid):0)}</div><button class="mini-btn" type="button" data-pay-loan="${x.loan.id}" style="margin-top:5px">Registrar</button></div></div>`}
+function searchClients(query){const q=normalizeName(query),digits=normalizePhone(query);return businessClients().filter(c=>!query||normalizeName(c.name).includes(q)||(digits&&normalizePhone(c.phone).includes(digits)))}
+function renderSearchResults(containerId,query){const rows=searchClients(query).slice(0,8);$(containerId).innerHTML=query?(rows.length?rows.map(c=>clientItemHTML(c,true)).join(''):'<div class="empty">No se encontró ese cliente en este negocio.</div>'):''}
+function renderClients(){ensureAllLoansCurrent(today());const query=$('clientSearch').value.trim(),year=Number($('clientYear').value)||new Date().getFullYear();let rows=searchClients(query);if(clientFilter==='active')rows=rows.filter(c=>clientLoans(c.id).some(activeStatus));if(clientFilter==='cancelled')rows=rows.filter(c=>{const ls=clientLoans(c.id);return ls.length&&ls.every(l=>l.status==='cancelled')});if(clientFilter==='year')rows=rows.filter(c=>clientActivityInYear(c.id,year));rows.sort((a,b)=>a.name.localeCompare(b.name,'es'));$('clientsList').innerHTML=rows.length?rows.map(c=>clientItemHTML(c,false)).join(''):'<div class="empty">No hay clientes para este filtro.</div>'}
+function clientItemHTML(c,compact=false){const loans=clientLoans(c.id),active=loans.filter(activeStatus),cancelled=loans.filter(l=>l.status==='cancelled'),principal=active.reduce((a,l)=>a+l.principalBalance,0);return `<div class="client-item"><div class="client-main"><div class="client-name">${esc(c.name)}</div><div class="client-phone">${esc(c.phone||'Sin teléfono')}</div><div class="client-badges">${active.length?`<span class="badge b-active">${active.length} activo(s)</span>`:''}${cancelled.length?`<span class="badge b-cancel">${cancelled.length} cancelado(s)</span>`:''}${principal?`<span class="badge b-pending">Debe ${money(principal)} capital</span>`:''}</div></div><div class="client-actions"><button class="mini-btn" type="button" data-client-detail="${c.id}">Ver</button>${!compact?`<button class="mini-btn" type="button" data-new-loan-client="${c.id}">+ Préstamo</button>`:''}</div></div>`}
+function openClientDetail(clientId){const c=getClient(clientId);if(!c)return;const loans=clientLoans(c.id),active=loans.filter(activeStatus),cancelled=loans.filter(l=>l.status==='cancelled');$('modalTitle').textContent=c.name;$('modalContent').innerHTML=`<div class="notice info" style="margin-bottom:12px">📞 ${esc(c.phone||'Sin teléfono')}<br>${loans.length} préstamo(s) registrados en este negocio.</div>${active.length?`<div class="section-head"><h2>Préstamo activo</h2></div><div class="loan-list">${active.map(loanCardHTML).join('')}</div>`:'<div class="notice good" style="margin-bottom:12px">No tiene préstamos activos.</div>'}<div class="section-head" style="margin-top:16px"><h2>Historial de préstamos</h2></div><div class="loan-list">${cancelled.length?cancelled.map(loanCardHTML).join(''):'<div class="empty">Todavía no tiene préstamos cancelados.</div>'}</div><button class="primary full" style="margin-top:14px" type="button" data-new-loan-client="${c.id}">Nuevo préstamo</button>`;showModal()}
+function loanCardHTML(l){const p=earliestOpenPeriod(l),quota=loanCurrentQuota(l),cls=l.status==='cancelled'?'cancelled':l.status==='interest_pending'?'pending':'active',label=l.status==='cancelled'?'Cancelado':l.status==='interest_pending'?'Capital pagado · interés pendiente':'Activo';return `<div class="loan-item"><div class="loan-head"><div><div class="loan-title">Préstamo ${fmtDate(l.startDate)}</div><div class="loan-sub">Original ${money(l.principalOriginal)} · ${l.interestRate}% mensual</div></div><span class="loan-status ${cls}">${label}</span></div><div class="loan-summary"><div><span>Capital actual</span><b>${money(l.principalBalance)}</b></div><div><span>Cuota actual</span><b>${money(quota)}</b></div><div><span>Interés pendiente</span><b>${money(totalInterestOutstanding(l))}</b></div><div><span>${l.status==='cancelled'?'Cancelado':'Próximo pago'}</span><b>${l.status==='cancelled'?fmtDate(l.cancelledAt):(p?fmtDate(p.dueDate):'—')}</b></div></div><div class="loan-actions">${activeStatus(l)?`<button class="mini-btn" type="button" data-pay-loan="${l.id}">Registrar pago</button>`:''}<button class="mini-btn" type="button" data-loan-history="${l.id}">Movimientos</button></div></div>`}
+function openLoanHistory(loanId){const l=getLoan(loanId),c=getClient(l?.clientId);if(!l||!c)return;const rows=db.movements.filter(m=>m.loanId===loanId).sort((a,b)=>String(b.date).localeCompare(String(a.date))||String(b.createdAt).localeCompare(String(a.createdAt)));$('modalTitle').textContent='Historial del préstamo';$('modalContent').innerHTML=`<div class="notice info" style="margin-bottom:12px"><b>${esc(c.name)}</b><br>Préstamo ${money(l.principalOriginal)} al ${l.interestRate}% · ${fmtDate(l.startDate)}${l.cancelledAt?`<br>Cancelado: ${fmtDate(l.cancelledAt)}`:''}</div><div class="movement-list">${rows.map(movementHTML).join('')}</div>`;showModal()}
+function movementHTML(m){const recalc=(Number(m.capitalPaid)||0)>0&&m.interestBefore!==m.interestAfter;return `<div class="movement-item"><div class="movement-top"><div><div class="movement-concept">${esc(m.concept||m.type)}</div><div class="movement-date">${fmtDate(m.date)}</div></div></div><div class="movement-values">${m.interestPaid?`<span class="mv-interest">Interés +${money(m.interestPaid)}</span>`:''}${m.capitalPaid?`<span class="mv-capital">Capital -${money(m.capitalPaid)}</span>`:''}${m.type==='loan'?`<span class="mv-capital">Capital ${money(m.principalAfter)}</span>`:''}${recalc?`<span class="mv-recalc">Cuota ${money(m.interestBefore)} → ${money(m.interestAfter)}</span>`:''}</div>${m.capitalPaid?`<div class="small muted" style="margin-top:7px">Capital: ${money(m.principalBefore)} → ${money(m.principalAfter)}</div>`:''}</div>`}
+function newLoanForClient(clientId){const c=getClient(clientId);closeModal();setPage('newLoan');if(c){$('loanClientName').value=c.name;$('loanClientPhone').value=c.phone;$('existingClientNote').classList.remove('hidden');$('existingClientNote').innerHTML=`Cliente recurrente: <b>${esc(c.name)}</b>. Este préstamo tendrá condiciones nuevas y quedará en su historial.`}}
+
+function renderCollections(){ensureAllLoansCurrent(today());const q=$('collectionSearch').value.trim(),clientIds=new Set(searchClients(q).map(c=>c.id));let loans=businessLoans().filter(activeStatus).filter(l=>!q||clientIds.has(l.clientId));if(collectionFilter==='overdue')loans=loans.filter(l=>loanAlertInfo(l).kind==='overdue');if(collectionFilter==='today')loans=loans.filter(l=>loanAlertInfo(l).kind==='today');if(collectionFilter==='upcoming')loans=loans.filter(l=>loanAlertInfo(l).kind==='upcoming');loans.sort((a,b)=>String(earliestOpenPeriod(a)?.dueDate||'9999').localeCompare(String(earliestOpenPeriod(b)?.dueDate||'9999')));$('collectionsList').innerHTML=loans.length?loans.map(collectionHTML).join(''):'<div class="empty">No hay préstamos para este filtro.</div>'}
+function collectionHTML(l){const c=getClient(l.clientId),info=loanAlertInfo(l),p=info.period,cls=info.kind==='overdue'?'s-overdue':info.kind==='today'?'s-today':info.kind==='upcoming'?'s-upcoming':'s-ok';return `<div class="collection-item"><div class="collection-top"><div><div class="collection-name">${esc(c?.name||'Cliente')}</div><div class="collection-due">${p?`Vence ${fmtDate(p.dueDate)}`:'Sin vencimiento'} · capital ${money(l.principalBalance)}</div><span class="alert-status ${cls}">${esc(info.label)}</span></div><div class="collection-amount"><span class="small muted">Interés pendiente</span><b>${money(totalInterestOutstanding(l))}</b></div></div><div class="collection-actions"><button class="primary" type="button" data-pay-loan="${l.id}">Registrar pago</button><button class="secondary" type="button" data-client-detail="${l.clientId}">Ver cliente</button></div></div>`}
+
+function renderMoreHeader(){const b=currentBusiness();if(!b)return;$('settingsBusinessName').textContent=b.name;$('accountName').textContent=currentUser?.name||'Usuario';$('accountEmail').textContent=currentUser?.email||'—'}
+function fillYearSelects(){const years=new Set([new Date().getFullYear()]);for(const l of businessLoans())if(l.startDate)years.add(Number(l.startDate.slice(0,4)));for(const m of businessMovements())if(m.date)years.add(Number(m.date.slice(0,4)));const opts=[...years].filter(Boolean).sort((a,b)=>b-a).map(y=>`<option value="${y}">${y}</option>`).join('');['historyYear','clientYear'].forEach(id=>{const el=$(id),old=el.value;el.innerHTML=opts;if(old&&[...years].includes(Number(old)))el.value=old})}
+function renderMore(){renderMoreHeader();fillYearSelects();const year=Number($('historyYear').value)||new Date().getFullYear(),movs=businessMovements().filter(m=>String(m.date).startsWith(String(year))),loans=businessLoans().filter(l=>String(l.startDate).startsWith(String(year))),interest=movs.reduce((a,m)=>a+(Number(m.interestPaid)||0),0),capitalRecovered=movs.reduce((a,m)=>a+(Number(m.capitalPaid)||0),0),cancelled=businessLoans().filter(l=>l.cancelledAt&&String(l.cancelledAt).startsWith(String(year))).length,clients=businessClients().filter(c=>clientActivityInYear(c.id,year)).length;$('historySummary').innerHTML=`<div class="year-box"><span>Clientes con actividad</span><b>${clients}</b></div><div class="year-box"><span>Préstamos nuevos</span><b>${loans.length}</b></div><div class="year-box"><span>Intereses cobrados</span><b>${money(interest)}</b></div><div class="year-box"><span>Capital recuperado</span><b>${money(capitalRecovered)}</b></div><div class="year-box"><span>Préstamos cancelados</span><b>${cancelled}</b></div>`;$('historyMovements').innerHTML=movs.length?[...movs].sort((a,b)=>String(b.date).localeCompare(String(a.date))).slice(0,80).map(m=>{const c=getClient(m.clientId);return `<div class="movement-item"><div class="movement-top"><div><div class="movement-concept">${esc(c?.name||'Cliente')} · ${esc(m.concept||m.type)}</div><div class="movement-date">${fmtDate(m.date)}</div></div></div><div class="movement-values">${m.interestPaid?`<span class="mv-interest">Interés ${money(m.interestPaid)}</span>`:''}${m.capitalPaid?`<span class="mv-capital">Capital ${money(m.capitalPaid)}</span>`:''}${m.type==='loan'?`<span class="mv-capital">Préstamo ${money(m.principalAfter)}</span>`:''}</div></div>`}).join(''):'<div class="empty">No hay movimientos registrados en este año.</div>'}
+function downloadBackup(){const blob=new Blob([JSON.stringify({exportedAt:new Date().toISOString(),user:currentUser?.email||'',data:appState()},null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`nexa-capital-respaldo-${today()}.json`;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);showToast('Respaldo descargado','Guárdalo en un lugar seguro.')}
+
+function refreshAll(){if(!currentBusinessId)return;renderHome();fillYearSelects();renderClients();renderCollections();renderMore()}
+function showModal(){$('modal').classList.remove('hidden')}
+function closeModal(){$('modal').classList.add('hidden');$('modalContent').innerHTML=''}
+
+function bindEvents(){
+  document.addEventListener('click',e=>{
+    const action=e.target.closest('[data-action]')?.dataset.action;
+    if(action==='show-register')showRegister();if(action==='show-login')showLogin();if(action==='show-forgot')showForgot();if(action==='login')login();if(action==='register')register();if(action==='reset-password')resetPassword();if(action==='logout')logout();if(action==='create-business')createBusiness();if(action==='business-selector')renderBusinessSelector();if(action==='close-modal')closeModal();if(action==='save-loan')saveLoan();if(action==='home-search')renderSearchResults('homeSearchResults',$('homeSearch').value.trim());if(action==='client-search')renderClients();if(action==='collection-search')renderCollections();if(action==='rename-business')renameBusiness();if(action==='verify-cloud')cloudSaveNow(true);if(action==='cloud-backup')cloudBackup('respaldo manual');if(action==='download-backup')downloadBackup();
+    const ob=e.target.closest('[data-open-business]');if(ob)openBusiness(ob.dataset.openBusiness);
+    const nav=e.target.closest('[data-page]');if(nav)setPage(nav.dataset.page);
+    const jump=e.target.closest('[data-page-jump]');if(jump)setPage(jump.dataset.pageJump);
+    const cf=e.target.closest('[data-client-filter]');if(cf){clientFilter=cf.dataset.clientFilter;document.querySelectorAll('[data-client-filter]').forEach(x=>x.classList.toggle('active',x===cf));$('clientYearWrap').classList.toggle('hidden',clientFilter!=='year');renderClients()}
+    const col=e.target.closest('[data-collection-filter]');if(col){collectionFilter=col.dataset.collectionFilter;document.querySelectorAll('[data-collection-filter]').forEach(x=>x.classList.toggle('active',x===col));renderCollections()}
+    const cd=e.target.closest('[data-client-detail]');if(cd)openClientDetail(cd.dataset.clientDetail);
+    const nl=e.target.closest('[data-new-loan-client]');if(nl)newLoanForClient(nl.dataset.newLoanClient);
+    const pay=e.target.closest('[data-pay-loan]');if(pay)openPaymentModal(pay.dataset.payLoan);
+    const sp=e.target.closest('[data-save-payment]');if(sp)savePayment(sp.dataset.savePayment);
+    const hist=e.target.closest('[data-loan-history]');if(hist)openLoanHistory(hist.dataset.loanHistory);
+  });
+  $('loanAmount').addEventListener('input',e=>{formatMoneyField(e.target);updateLoanCalc()});$('loanRate').addEventListener('input',updateLoanCalc);$('loanClientPhone').addEventListener('input',updateExistingClientNote);$('loanClientName').addEventListener('blur',updateExistingClientNote);$('loanStartDate').addEventListener('change',()=>{if(!$('loanFirstDue').value||$('loanFirstDue').value<=$('loanStartDate').value)$('loanFirstDue').value=addMonthsISO($('loanStartDate').value,1)});$('homeSearch').addEventListener('input',()=>renderSearchResults('homeSearchResults',$('homeSearch').value.trim()));$('clientSearch').addEventListener('input',renderClients);$('collectionSearch').addEventListener('input',renderCollections);$('clientYear').addEventListener('change',renderClients);$('historyYear').addEventListener('change',renderMore);$('modal').addEventListener('click',e=>{if(e.target===$('modal'))closeModal()});window.addEventListener('online',()=>cloudSaveNow(false));
+}
+
+bindEvents();
+initFirebase();
+if(!firebaseConfigured())showOnly('authScreen');
+</script>
+</body>
+</html>
