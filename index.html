@@ -532,10 +532,83 @@ body.modal-open{overflow:hidden!important;touch-action:none}
 .welcome-name{margin:9px 0 0;font-size:16px;color:#344054;font-weight:750}
 .welcome-sub{margin:10px auto 0;max-width:310px;color:var(--muted);font-size:13px;line-height:1.45}
 .welcome-loader{width:42px;height:4px;border-radius:999px;background:#E8EDF2;margin:22px auto 0;overflow:hidden}
-.welcome-loader::after{content:"";display:block;width:55%;height:100%;border-radius:inherit;background:var(--brand);animation:nexaWelcome 1s ease-in-out infinite alternate}
+.welcome-loader::after{content:"";display:block;width:55%;height:100%;border-radius:inherit;background:var(--brand);animation:nexaWelcome 1.15s ease-in-out infinite alternate}
 @keyframes nexaWelcome{from{transform:translateX(-10%)}to{transform:translateX(90%)}}
 @media(max-width:480px){.welcome-card{border:0;box-shadow:none;background:transparent;padding:24px 10px}.welcome-title{font-size:27px}}
 
+
+
+/* ===== NEXA v19 · acciones premium compactas ===== */
+/* Lista de clientes: botones rellenos, pequeños y con mejor contraste. */
+.client-card-actions{gap:8px!important;align-items:center!important}
+.client-card-actions .mini-btn{
+  min-height:34px!important;padding:7px 11px!important;border-radius:11px!important;
+  border:1px solid transparent!important;font-size:10.5px!important;font-weight:850!important;
+  line-height:1!important;box-shadow:0 3px 10px rgba(11,29,51,.07)!important;
+  transition:transform .15s ease,box-shadow .15s ease,filter .15s ease!important
+}
+.client-card-actions .mini-btn:hover{transform:translateY(-1px);box-shadow:0 5px 13px rgba(11,29,51,.11)!important}
+.client-card-actions .mini-btn:active{transform:scale(.97)}
+.client-card-actions .action-view{background:#EEF2F6!important;color:#26384B!important;border-color:#E2E7EC!important}
+.client-card-actions .action-edit{background:#DDF6EE!important;color:#087A68!important;border-color:#B9EBDD!important}
+.client-card-actions .action-delete{background:#FFE3E1!important;color:#C9362B!important;border-color:#FFC8C3!important}
+.client-card-actions .action-loan{background:#0B1D33!important;color:#fff!important;border-color:#0B1D33!important}
+
+/* Ficha del cliente: editar/eliminar son iconos inequívocos. */
+.client-icon-actions{display:flex!important;grid-template-columns:none!important;gap:10px!important;align-items:center!important;margin-bottom:14px!important}
+.client-icon-actions .icon-action{
+  width:38px!important;height:38px!important;min-width:38px!important;min-height:38px!important;
+  padding:0!important;border-radius:12px!important;display:grid!important;place-items:center!important;
+  box-shadow:0 4px 12px rgba(11,29,51,.08)!important;transition:transform .15s ease,box-shadow .15s ease!important
+}
+.client-icon-actions .icon-action:hover{transform:translateY(-1px);box-shadow:0 6px 14px rgba(11,29,51,.12)!important}
+.client-icon-actions .icon-action:active{transform:scale(.95)}
+.client-icon-actions .icon-action svg{width:18px!important;height:18px!important;fill:none!important;stroke:currentColor!important;stroke-width:1.9!important;stroke-linecap:round!important;stroke-linejoin:round!important}
+.client-icon-actions .icon-edit{background:#D8F5EC!important;color:#087A68!important;border:1px solid #ACE4D5!important}
+.client-icon-actions .icon-delete{background:#FFE0DE!important;color:#C9342A!important;border:1px solid #FFBBB5!important}
+
+/* Préstamo: dos acciones arriba y edición debajo. */
+.loan-action-grid{
+  display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
+  gap:8px!important;margin-top:12px!important;max-width:410px!important
+}
+.loan-action-grid .mini-btn{
+  min-height:35px!important;padding:7px 10px!important;border-radius:11px!important;
+  font-size:10.5px!important;font-weight:850!important;display:flex!important;align-items:center!important;
+  justify-content:center!important;gap:7px!important;line-height:1!important;
+  box-shadow:0 3px 10px rgba(11,29,51,.07)!important;transition:transform .15s ease,box-shadow .15s ease!important
+}
+.loan-action-grid .mini-btn:hover{transform:translateY(-1px);box-shadow:0 5px 13px rgba(11,29,51,.11)!important}
+.loan-action-grid .mini-btn:active{transform:scale(.98)}
+.loan-action-grid .mini-btn svg{width:15px!important;height:15px!important;fill:none!important;stroke:currentColor!important;stroke-width:1.8!important;stroke-linecap:round!important;stroke-linejoin:round!important}
+.loan-action-grid .loan-pay-btn{background:#0B1D33!important;color:#fff!important;border:1px solid #0B1D33!important}
+.loan-action-grid .loan-history-btn{background:#F0F3F6!important;color:#26384B!important;border:1px solid #E0E5EA!important}
+.loan-action-grid .loan-edit-btn{
+  grid-column:1/-1!important;background:#DDF6EE!important;color:#087A68!important;border:1px solid #B9EBDD!important;
+  width:100%!important;min-height:34px!important
+}
+
+/* Desktop: controles deliberadamente compactos. */
+@media(min-width:980px){
+  .client-card-actions .mini-btn{min-height:32px!important;padding:6px 10px!important;font-size:10px!important}
+  .client-icon-actions .icon-action{width:36px!important;height:36px!important;min-width:36px!important;min-height:36px!important}
+  .loan-action-grid{gap:7px!important;max-width:380px!important}
+  .loan-action-grid .mini-btn{min-height:33px!important;padding:6px 9px!important;font-size:10px!important}
+  .loan-action-grid .loan-edit-btn{min-height:32px!important}
+}
+
+/* Móvil: nada pegado ni fuera de pantalla. */
+@media(max-width:620px){
+  .client-item{gap:12px!important}
+  .client-card-actions{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;width:100%!important;margin-top:10px!important}
+  .client-item{display:block!important}
+  .client-card-actions .mini-btn{width:100%!important;min-width:0!important;min-height:37px!important;padding:8px 6px!important;font-size:10px!important}
+  .client-icon-actions{display:flex!important;gap:11px!important;width:auto!important}
+  .client-icon-actions .icon-action{width:40px!important;height:40px!important;min-width:40px!important;min-height:40px!important}
+  .loan-action-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;max-width:none!important;width:100%!important}
+  .loan-action-grid .mini-btn{width:100%!important;min-width:0!important;min-height:38px!important;padding:8px 6px!important;font-size:10px!important}
+  .loan-action-grid .loan-edit-btn{grid-column:1/-1!important;min-height:37px!important}
+}
 </style>
 </head>
 <body>
@@ -712,7 +785,7 @@ body.modal-open{overflow:hidden!important;touch-action:none}
           <div class="protection-list">
             <div class="protection-item"><div class="protection-icon"><svg viewBox="0 0 24 24"><path d="M7 18h10a4 4 0 0 0 .7-7.9A6 6 0 0 0 6.2 9.2 4.5 4.5 0 0 0 7 18Z"/><path d="m9.5 13 1.7 1.7 3.5-3.5"/></svg></div><div><div class="protection-title">Firebase · guardado principal</div><div id="firebaseStateText" class="protection-sub">Comprobando conexión…</div></div><div class="protection-actions"><span id="firebaseProtectionBadge" class="status-badge">Revisando</span><button class="mini-btn" type="button" data-action="verify-cloud">Comprobar</button></div></div>
             <div class="protection-item"><div class="protection-icon"><svg viewBox="0 0 24 24"><path d="M12 3v12"/><path d="m8 11 4 4 4-4"/><path d="M5 18h14v3H5z"/></svg></div><div><div class="protection-title">Copia diaria automática</div><div id="firebaseBackupStateText" class="protection-sub">Se crea automáticamente al entrar a la app.</div></div><div class="protection-actions"><span id="firebaseBackupBadge" class="status-badge success">Automática</span><button class="mini-btn" type="button" data-action="cloud-backup">Crear ahora</button></div></div>
-            <div id="googleProtectionItem" class="protection-item google-protection"><div class="protection-icon"><svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h8M11 6v12M15 6v12"/></svg></div><div><div class="protection-title">Google Sheets · segunda copia en vivo</div><div id="googleSheetsStateText" class="protection-sub">Conecta tu cuenta una vez y NEXA mantendrá el mismo archivo actualizado mientras uses la app con Internet.</div><div id="googleSheetsIssue" class="google-issue hidden"></div><div id="googleSheetsOptional" class="google-optional">Cada cambio guardado en NEXA se copiará al mismo Google Sheet cuando Google esté autorizado.</div></div><div class="protection-actions"><span id="googleSheetsBadge" class="status-badge">Sin conectar</span><button id="googleSheetsButton" class="mini-btn" type="button" data-action="google-sheets-sync">Conectar Google</button><button id="googleSheetsOpenButton" class="mini-btn hidden" type="button" data-action="open-google-sheet">Abrir hoja</button></div></div>
+            <div id="googleProtectionItem" class="protection-item google-protection"><div class="protection-icon"><svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h8M11 6v12M15 6v12"/></svg></div><div><div class="protection-title">Google Sheets · segunda copia en vivo</div><div id="googleSheetsStateText" class="protection-sub">Conecta tu cuenta una sola vez. NEXA recordará esta hoja y seguirá usando el mismo archivo como segunda copia externa.</div><div id="googleSheetsIssue" class="google-issue hidden"></div><div id="googleSheetsOptional" class="google-optional">La vinculación queda guardada. Si Google vence o revoca la autorización, NEXA te avisará sin afectar el guardado principal en Firebase.</div></div><div class="protection-actions"><span id="googleSheetsBadge" class="status-badge">Sin conectar</span><button id="googleSheetsButton" class="mini-btn" type="button" data-action="google-sheets-sync">Conectar Google</button><button id="googleSheetsOpenButton" class="mini-btn hidden" type="button" data-action="open-google-sheet">Abrir hoja</button></div></div>
           </div>
           <details class="manual-backups"><summary>Copias manuales y exportaciones</summary><div class="manual-backup-body">
             <div class="manual-row"><div><b>Excel completo</b><span>Negocios, clientes, préstamos, cuotas y movimientos.</span></div><button class="mini-btn" type="button" data-action="download-excel">Descargar</button></div>
@@ -757,7 +830,7 @@ const NEXA_FIREBASE_CONFIG={
    APIs requeridas: Google Sheets API + Google Drive API. */
 const NEXA_GOOGLE_OAUTH_CLIENT_ID="427027770809-8f1kngmiep6lpgin019hdmobnuiro7mc.apps.googleusercontent.com";
 const NEXA_GOOGLE_ALLOWED_ORIGIN="https://progama-seven.vercel.app";
-const NEXA_GOOGLE_OAUTH_BUILD="v16";
+const NEXA_GOOGLE_OAUTH_BUILD="v18";
 // Alcance mínimo recomendado por Google: solo archivos creados/usados por NEXA.
 const NEXA_GOOGLE_SCOPES="https://www.googleapis.com/auth/drive.file";
 
@@ -777,11 +850,14 @@ let lastRecalc=null;
 let businessModalMode='create';
 let pendingDeleteBusinessId=null;
 let googleAccessToken='';
+let googleTokenOwnerUid='';
 let googleSheetsTokenClient=null;
 let googleSheetsSyncTimer=null;
 let googleSheetsSyncInFlight=false;
 let googleSheetsMeta={sheetId:'',sheetUrl:'',lastSyncAt:'',googleConnected:false,googleEmail:'',connectedAt:'',pendingAt:''};
 let googleConnectionIssue='';
+let googleReconnectRequired=false;
+let googleReconnectNoticeShown=false;
 let lastFirebaseBackupAt='',lastFirebaseBackupReason='';
 
 const $=id=>document.getElementById(id);
@@ -824,7 +900,7 @@ function validEmail(email){return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i.test(String(e
 function firebaseErrorText(e){const code=String(e?.code||'');if(code.includes('invalid-email'))return 'El correo no tiene un formato válido.';if(code.includes('invalid-credential')||code.includes('wrong-password')||code.includes('user-not-found'))return 'Correo o contraseña incorrectos.';if(code.includes('email-already-in-use'))return 'Ese correo ya tiene una cuenta.';if(code.includes('weak-password'))return 'La contraseña debe tener al menos 6 caracteres.';if(code.includes('network'))return 'No hay conexión estable a Internet.';if(code.includes('too-many-requests'))return 'Hubo demasiados intentos. Espera un momento y vuelve a intentar.';return 'No se pudo completar la operación. Intenta nuevamente.'}
 function initFirebase(){
   if(!firebaseConfigured()){$('firebaseSetupNote').classList.remove('hidden');setCloud('bad','Firebase sin configurar');return false}
-  try{firebaseApp=firebase.apps?.length?firebase.app():firebase.initializeApp(NEXA_FIREBASE_CONFIG);cloudAuth=firebase.auth();cloudDb=firebase.database();cloudAuth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});cloudAuth.onAuthStateChanged(async user=>{if(user){currentUser={id:user.uid,email:user.email||'',name:user.displayName||(user.email||'Usuario').split('@')[0]};await loadCloudState(user.uid);openAfterLogin()}else{currentUser=null;showOnly('authScreen')}});return true}catch(e){console.error(e);setCloud('bad','Error Firebase');return false}
+  try{firebaseApp=firebase.apps?.length?firebase.app():firebase.initializeApp(NEXA_FIREBASE_CONFIG);cloudAuth=firebase.auth();cloudDb=firebase.database();cloudAuth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});cloudAuth.onAuthStateChanged(async user=>{if(user){if(googleTokenOwnerUid&&googleTokenOwnerUid!==user.uid){googleAccessToken='';googleTokenOwnerUid='';googleSheetsTokenClient=null;}currentUser={id:user.uid,email:user.email||'',name:user.displayName||(user.email||'Usuario').split('@')[0]};await loadCloudState(user.uid);openAfterLogin()}else{currentUser=null;showOnly('authScreen')}});return true}catch(e){console.error(e);setCloud('bad','Error Firebase');return false}
 }
 async function loadCloudState(uid){if(!cloudDb)return;cloudLoading=true;setCloud('work','Cargando…');try{const snap=await cloudDb.ref(cloudPath(uid,'state')).once('value');const remote=snap.val();if(remote?.data){applyState(remote.data)}else if((db.businesses?.length||0)+(db.clients?.length||0)+(db.loans?.length||0)>0){await cloudDb.ref(cloudPath(uid,'state')).set({data:appState(),updatedAt:new Date().toISOString()})}else{applyState({})}localStorage.setItem(CLOUD_OWNER_KEY,uid);localStorage.setItem(CLOUD_DIRTY_KEY,'0');setCloud('ok','Nube al día');await loadGoogleSheetsMeta();await maybeDailyBackup(appState(),'respaldo automático al iniciar');await loadBackupStatus();checkProtectionReminder()}catch(e){console.error(e);setCloud('bad','Error al cargar nube');showToast('No se pudo cargar Firebase',firebaseErrorText(e),'bad')}finally{cloudLoading=false}}
 function saveLocal(){localStorage.setItem(APP_KEY,JSON.stringify(db));localStorage.setItem(CLOUD_DIRTY_KEY,'1');localStorage.setItem(CLOUD_UPDATED_KEY,new Date().toISOString());queueCloudSave();queueGoogleSheetsSync()}
@@ -851,7 +927,7 @@ function checkProtectionReminder(){if(!currentUser)return;const todayKey='NEXA_P
 function renderProtectionOverall(){const el=$('protectionOverallBadge');if(!el)return;const firebaseOk=$('cloudPill')?.classList.contains('ok'),googleOk=!!googleSheetsMeta.sheetId;if(firebaseOk&&googleOk){el.className='status-badge success';el.textContent='Protección reforzada'}else if(firebaseOk){el.className='status-badge success';el.textContent='Protección activa'}else{el.className='status-badge error';el.textContent='Revisar Firebase'}}
 
 let welcomeTimer=null;
-function openAfterLogin(){if(!currentUser)return;clearTimeout(welcomeTimer);currentBusinessId=null;showOnly('welcomeScreen');const name=(currentUser.name||currentUser.email||'').trim();const nameEl=$('welcomeUserName');if(nameEl)nameEl.textContent=name?`Hola, ${name.split('@')[0]}`:'Tus negocios están listos';const authLogo=document.querySelector('.brand-logo');const welcomeLogo=$('welcomeLogo');if(authLogo&&welcomeLogo)welcomeLogo.src=authLogo.src;welcomeTimer=setTimeout(()=>{if(currentUser)renderBusinessSelector()},900)}
+function openAfterLogin(){if(!currentUser)return;clearTimeout(welcomeTimer);currentBusinessId=null;showOnly('welcomeScreen');const name=(currentUser.name||currentUser.email||'').trim();const nameEl=$('welcomeUserName');if(nameEl)nameEl.textContent=name?`Hola, ${name.split('@')[0]}`:'Tus negocios están listos';const authLogo=document.querySelector('.brand-logo');const welcomeLogo=$('welcomeLogo');if(authLogo&&welcomeLogo)welcomeLogo.src=authLogo.src;welcomeTimer=setTimeout(()=>{if(currentUser)renderBusinessSelector()},3000)}
 function renderBusinessSelector(){showOnly('businessScreen');const grid=$('businessGrid');const businesses=[...db.businesses].sort((a,b)=>String(a.createdAt).localeCompare(String(b.createdAt)));const trash=`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M7 7l1 13h8l1-13"/><path d="M10 11v5M14 11v5"/></svg>`;grid.innerHTML=businesses.map((b,i)=>`<div class="business-row"><button class="business-card" type="button" data-open-business="${b.id}"><div class="business-icon">${i+1}</div><div><b>${esc(b.name)}</b><span>${businessClientCount(b.id)} cliente(s) · ${businessActiveLoanCount(b.id)} préstamo(s) activo(s)</span></div></button><button class="business-delete" type="button" data-delete-business="${b.id}" aria-label="Eliminar ${esc(b.name)}" title="Eliminar negocio">${trash}</button></div>`).join('')+`<div class="business-row"><button class="business-card add" type="button" data-action="create-business"><div class="business-icon">＋</div><div><b>Crear nuevo negocio</b><span>Agrega otro negocio independiente</span></div></button></div>`}
 function businessClientCount(businessId){return db.clients.filter(c=>c.businessId===businessId).length}
 function businessActiveLoanCount(businessId){return db.loans.filter(l=>l.businessId===businessId&&activeStatus(l)).length}
@@ -949,13 +1025,13 @@ function alertHTML(x){const p=x.info.period,cls=x.info.kind==='overdue'?'s-overd
 function searchClients(query){const q=normalizeName(query),digits=normalizePhone(query);return businessClients().filter(c=>!query||normalizeName(c.name).includes(q)||(digits&&normalizePhone(c.phone).includes(digits)))}
 function renderSearchResults(containerId,query){const rows=searchClients(query).slice(0,8);$(containerId).innerHTML=query?(rows.length?rows.map(c=>clientItemHTML(c,true)).join(''):'<div class="empty">No se encontró ese cliente en este negocio.</div>'):''}
 function renderClients(){ensureAllLoansCurrent(today());const query=$('clientSearch').value.trim(),year=Number($('clientYear').value)||new Date().getFullYear();let rows=searchClients(query);if(clientFilter==='active')rows=rows.filter(c=>clientLoans(c.id).some(activeStatus));if(clientFilter==='cancelled')rows=rows.filter(c=>{const ls=clientLoans(c.id);return ls.length&&ls.every(l=>l.status==='cancelled')});if(clientFilter==='year')rows=rows.filter(c=>clientActivityInYear(c.id,year));rows.sort((a,b)=>a.name.localeCompare(b.name,'es'));$('clientsList').innerHTML=rows.length?rows.map(c=>clientItemHTML(c,false)).join(''):'<div class="empty">No hay clientes para este filtro.</div>'}
-function clientItemHTML(c,compact=false){const loans=clientLoans(c.id),active=loans.filter(activeStatus),cancelled=loans.filter(l=>l.status==='cancelled'),principal=active.reduce((a,l)=>a+l.principalBalance,0);return `<div class="client-item"><div class="client-main"><div class="client-name">${esc(c.name)}</div><div class="client-phone">${esc(c.phone||'Sin teléfono')}</div><div class="client-badges">${active.length?`<span class="badge b-active">${active.length} activo(s)</span>`:''}${cancelled.length?`<span class="badge b-cancel">${cancelled.length} cancelado(s)</span>`:''}${principal?`<span class="badge b-pending">Debe ${money(principal)} capital</span>`:''}</div></div><div class="client-actions"><button class="mini-btn" type="button" data-client-detail="${c.id}">Ver</button>${!compact?`<button class="mini-btn edit-client" type="button" data-edit-client="${c.id}">Editar</button><button class="mini-btn delete-client" type="button" data-delete-client="${c.id}">Eliminar</button><button class="mini-btn" type="button" data-new-loan-client="${c.id}">+ Préstamo</button>`:''}</div></div>`}
-function openClientDetail(clientId){const c=getClient(clientId);if(!c)return;const loans=clientLoans(c.id),active=loans.filter(activeStatus),cancelled=loans.filter(l=>l.status==='cancelled');$('modalTitle').textContent=c.name;$('modalContent').innerHTML=`<div class="client-manage-row"><button class="mini-btn edit-client" type="button" data-edit-client="${c.id}">Editar cliente</button><button class="mini-btn delete-client" type="button" data-delete-client="${c.id}">Eliminar cliente</button></div><div class="notice info" style="margin-bottom:12px">Teléfono: ${esc(c.phone||'Sin teléfono')}<br>${loans.length} préstamo(s) registrados en este negocio.</div>${active.length?`<div class="section-head"><h2>Préstamo activo</h2></div><div class="loan-list">${active.map(loanCardHTML).join('')}</div>`:'<div class="notice good" style="margin-bottom:12px">No tiene préstamos activos.</div>'}<div class="section-head" style="margin-top:16px"><h2>Historial de préstamos</h2></div><div class="loan-list">${cancelled.length?cancelled.map(loanCardHTML).join(''):'<div class="empty">Todavía no tiene préstamos cancelados.</div>'}</div><button class="primary full" style="margin-top:14px" type="button" data-new-loan-client="${c.id}">Nuevo préstamo</button>`;showModal()}
+function clientItemHTML(c,compact=false){const loans=clientLoans(c.id),active=loans.filter(activeStatus),cancelled=loans.filter(l=>l.status==='cancelled'),principal=active.reduce((a,l)=>a+l.principalBalance,0);return `<div class="client-item"><div class="client-main"><div class="client-name">${esc(c.name)}</div><div class="client-phone">${esc(c.phone||'Sin teléfono')}</div><div class="client-badges">${active.length?`<span class="badge b-active">${active.length} activo(s)</span>`:''}${cancelled.length?`<span class="badge b-cancel">${cancelled.length} cancelado(s)</span>`:''}${principal?`<span class="badge b-pending">Debe ${money(principal)} capital</span>`:''}</div></div><div class="client-actions client-card-actions"><button class="mini-btn action-view" type="button" data-client-detail="${c.id}">Ver</button>${!compact?`<button class="mini-btn edit-client action-edit" type="button" data-edit-client="${c.id}">Editar</button><button class="mini-btn delete-client action-delete" type="button" data-delete-client="${c.id}">Eliminar</button><button class="mini-btn action-loan" type="button" data-new-loan-client="${c.id}">+ Préstamo</button>`:''}</div></div>`}
+function openClientDetail(clientId){const c=getClient(clientId);if(!c)return;const loans=clientLoans(c.id),active=loans.filter(activeStatus),cancelled=loans.filter(l=>l.status==='cancelled');$('modalTitle').textContent=c.name;$('modalContent').innerHTML=`<div class="client-manage-row client-icon-actions"><button class="mini-btn edit-client icon-action icon-edit" type="button" data-edit-client="${c.id}" aria-label="Editar cliente" title="Editar cliente"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg></button><button class="mini-btn delete-client icon-action icon-delete" type="button" data-delete-client="${c.id}" aria-label="Eliminar cliente" title="Eliminar cliente"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v5M14 11v5"/></svg></button></div><div class="notice info" style="margin-bottom:12px">Teléfono: ${esc(c.phone||'Sin teléfono')}<br>${loans.length} préstamo(s) registrados en este negocio.</div>${active.length?`<div class="section-head"><h2>Préstamo activo</h2></div><div class="loan-list">${active.map(loanCardHTML).join('')}</div>`:'<div class="notice good" style="margin-bottom:12px">No tiene préstamos activos.</div>'}<div class="section-head" style="margin-top:16px"><h2>Historial de préstamos</h2></div><div class="loan-list">${cancelled.length?cancelled.map(loanCardHTML).join(''):'<div class="empty">Todavía no tiene préstamos cancelados.</div>'}</div><button class="primary full" style="margin-top:14px" type="button" data-new-loan-client="${c.id}">Nuevo préstamo</button>`;showModal()}
 function openEditClientModal(clientId){const c=getClient(clientId);if(!c)return;$('modalTitle').textContent='Editar cliente';$('modalContent').innerHTML=`<div class="form-grid"><div class="fullcol"><label class="label">Nombre</label><input id="editClientName" class="input" maxlength="80" value="${esc(c.name)}" placeholder="Nombre del cliente"></div><div class="fullcol"><label class="label">Teléfono</label><input id="editClientPhone" class="input" inputmode="tel" maxlength="30" value="${esc(c.phone||'')}" placeholder="Número de teléfono"></div><div class="fullcol notice info">Los préstamos e historial no cambian. Solo se actualizan los datos de la ficha del cliente.</div><div class="fullcol" style="display:flex;gap:9px;justify-content:flex-end"><button class="secondary" type="button" data-client-detail="${c.id}">Cancelar</button><button class="primary" type="button" data-save-client="${c.id}">Guardar cambios</button></div></div>`;showModal();setTimeout(()=>$('editClientName')?.focus(),30)}
 function saveClientChanges(clientId){const c=getClient(clientId);if(!c)return;const name=$('editClientName')?.value.trim(),phone=$('editClientPhone')?.value.trim();if(!name||!phone)return showToast('Faltan datos','Nombre y teléfono son obligatorios.','bad');const duplicate=businessClients().find(x=>x.id!==clientId&&normalizePhone(x.phone)===normalizePhone(phone));if(duplicate)return showToast('Teléfono ya registrado',`Ese número pertenece a ${duplicate.name}.`,'bad');c.name=name;c.phone=phone;c.updatedAt=new Date().toISOString();saveLocal();refreshAll();showToast('Cliente actualizado',`${c.name} quedó actualizado.`);openClientDetail(c.id)}
 function openDeleteClientConfirm(clientId){const c=getClient(clientId);if(!c)return;const loans=clientLoans(c.id),active=loans.filter(activeStatus);$('modalTitle').textContent='Eliminar cliente';$('modalContent').innerHTML=`<div class="notice warn delete-warning"><b>Vas a eliminar a ${esc(c.name)}.</b><br>Se borrará su ficha, préstamos y movimientos de este negocio. Antes de continuar, NEXA guardará una copia de seguridad en Firebase.</div><div class="loan-summary delete-summary"><div><span>Cliente</span><b>${esc(c.name)}</b></div><div><span>Préstamos</span><b>${loans.length}</b></div><div><span>Activos</span><b>${active.length}</b></div><div><span>Teléfono</span><b>${esc(c.phone||'—')}</b></div></div><div class="delete-confirm-text">Confirma únicamente si realmente quieres eliminar este cliente.</div><div class="confirm-actions"><button class="secondary" type="button" data-client-detail="${c.id}">Cancelar</button><button class="danger" type="button" data-confirm-delete-client="${c.id}">Sí, eliminar cliente</button></div>`;showModal()}
 async function deleteClient(clientId){const c=getClient(clientId);if(!c)return;const backupOk=await cloudBackup('antes de eliminar cliente',false);if(!backupOk)return showToast('No se eliminó el cliente','No se pudo crear la copia de seguridad en Firebase. Revisa Internet e inténtalo otra vez.','bad');db.movements=db.movements.filter(x=>x.clientId!==clientId);db.loans=db.loans.filter(x=>x.clientId!==clientId);db.clients=db.clients.filter(x=>x.id!==clientId);saveLocal();closeModal();refreshAll();const cloudOk=await cloudSaveNow(false);if(!cloudOk)return showToast('Cliente eliminado localmente','Firebase quedó pendiente de sincronizar. No cierres la app hasta recuperar Internet.','bad');showToast('Cliente eliminado','La copia anterior quedó guardada en Firebase.')}
-function loanCardHTML(l){const p=earliestOpenPeriod(l),quota=loanCurrentQuota(l),cls=l.status==='cancelled'?'cancelled':l.status==='interest_pending'?'pending':'active',label=l.status==='cancelled'?'Cancelado':l.status==='interest_pending'?'Capital pagado · interés pendiente':'Activo';return `<div class="loan-item"><div class="loan-head"><div><div class="loan-title">Préstamo ${fmtDate(l.startDate)}</div><div class="loan-sub">Original ${money(l.principalOriginal)} · ${l.interestRate}% mensual</div></div><span class="loan-status ${cls}">${label}</span></div><div class="loan-summary"><div><span>Capital actual</span><b>${money(l.principalBalance)}</b></div><div><span>Cuota actual</span><b>${money(quota)}</b></div><div><span>Interés pendiente</span><b>${money(totalInterestOutstanding(l))}</b></div><div><span>${l.status==='cancelled'?'Cancelado':'Próximo pago'}</span><b>${l.status==='cancelled'?fmtDate(l.cancelledAt):(p?fmtDate(p.dueDate):'—')}</b></div></div><div class="loan-actions">${activeStatus(l)?`<button class="mini-btn" type="button" data-pay-loan="${l.id}">Registrar pago</button><button class="mini-btn edit-loan-btn" type="button" data-edit-loan="${l.id}">Editar préstamo</button>`:''}<button class="mini-btn" type="button" data-loan-history="${l.id}">Movimientos</button></div></div>`}
+function loanCardHTML(l){const p=earliestOpenPeriod(l),quota=loanCurrentQuota(l),cls=l.status==='cancelled'?'cancelled':l.status==='interest_pending'?'pending':'active',label=l.status==='cancelled'?'Cancelado':l.status==='interest_pending'?'Capital pagado · interés pendiente':'Activo';return `<div class="loan-item"><div class="loan-head"><div><div class="loan-title">Préstamo ${fmtDate(l.startDate)}</div><div class="loan-sub">Original ${money(l.principalOriginal)} · ${l.interestRate}% mensual</div></div><span class="loan-status ${cls}">${label}</span></div><div class="loan-summary"><div><span>Capital actual</span><b>${money(l.principalBalance)}</b></div><div><span>Cuota actual</span><b>${money(quota)}</b></div><div><span>Interés pendiente</span><b>${money(totalInterestOutstanding(l))}</b></div><div><span>${l.status==='cancelled'?'Cancelado':'Próximo pago'}</span><b>${l.status==='cancelled'?fmtDate(l.cancelledAt):(p?fmtDate(p.dueDate):'—')}</b></div></div><div class="loan-actions loan-action-grid">${activeStatus(l)?`<button class="mini-btn loan-pay-btn" type="button" data-pay-loan="${l.id}"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h3"/></svg><span>Registrar pago</span></button>`:''}<button class="mini-btn loan-history-btn" type="button" data-loan-history="${l.id}"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/></svg><span>Movimientos</span></button>${activeStatus(l)?`<button class="mini-btn edit-loan-btn loan-edit-btn" type="button" data-edit-loan="${l.id}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg><span>Editar préstamo</span></button>`:''}</div></div>`}
 
 function openEditLoanModal(loanId){
   const l=getLoan(loanId),c=getClient(l?.clientId);if(!l||!c||!activeStatus(l))return;
@@ -1033,6 +1109,7 @@ function googleSheetsConfigured(){
   return !!(NEXA_GOOGLE_OAUTH_CLIENT_ID&&NEXA_GOOGLE_OAUTH_CLIENT_ID.includes('.apps.googleusercontent.com')&&!NEXA_GOOGLE_OAUTH_CLIENT_ID.startsWith('PEGA_AQUI'))
 }
 async function loadGoogleSheetsMeta(){
+  googleReconnectRequired=false;googleReconnectNoticeShown=false;googleConnectionIssue='';
   googleSheetsMeta={sheetId:'',sheetUrl:'',lastSyncAt:'',googleConnected:false,googleEmail:'',connectedAt:'',pendingAt:''};
   if(!cloudDb||!currentUser?.id){renderGoogleSheetsState();return}
   try{const snap=await cloudDb.ref(cloudPath(currentUser.id,'settings/googleSheets')).once('value');googleSheetsMeta={...googleSheetsMeta,...(snap.val()||{})}}catch(e){console.warn('Google Sheets config:',e)}
@@ -1061,30 +1138,44 @@ function renderGoogleSheetsState(){
   if(googleSheetsMeta.sheetId){
     const pending=!!googleSheetsMeta.pendingAt;
     if(googleAccessToken){
-      text.textContent=`Cuenta Google conectada${googleSheetsMeta.lastSyncAt?' · última copia '+new Date(googleSheetsMeta.lastSyncAt).toLocaleString('es-CO'):' · lista para la primera copia'}`;
+      googleReconnectRequired=false;
+      text.textContent=`Google Sheets vinculado${googleSheetsMeta.lastSyncAt?' · última copia '+new Date(googleSheetsMeta.lastSyncAt).toLocaleString('es-CO'):' · listo para copiar'}`;
       btn.textContent=pending?'Sincronizar ahora':'Actualizar ahora';
-      if(badge){badge.className='status-badge success';badge.textContent=pending?'Cambios pendientes':'Google conectado'}
-      if(optional)optional.textContent=pending?'Hay cambios guardados en Firebase pendientes de copiar a Google Sheets.':'Copia automática activa: los cambios se envían al mismo Sheet después de guardarse.';
-    }else{
-      text.textContent=`Hoja vinculada${googleSheetsMeta.lastSyncAt?' · última copia '+new Date(googleSheetsMeta.lastSyncAt).toLocaleString('es-CO'):''}. Autoriza Google para continuar la sincronización de esta sesión.`;
+      if(badge){badge.className='status-badge success';badge.textContent=pending?'Cambios pendientes':'Vinculado'}
+      if(optional)optional.textContent=pending?'Hay cambios guardados en Firebase pendientes de copiar al mismo Google Sheet.':'Configuración guardada: no necesitas volver a conectar Google cada vez que cierres sesión.';
+      if(issue){issue.classList.add('hidden');issue.textContent=''}
+    }else if(googleReconnectRequired){
+      text.textContent=`Google Sheets sigue vinculado${googleSheetsMeta.lastSyncAt?' · última copia '+new Date(googleSheetsMeta.lastSyncAt).toLocaleString('es-CO'):''}, pero Google necesita renovar la autorización para seguir actualizando la segunda copia.`;
       btn.textContent='Reconectar Google';
-      if(badge){badge.className='status-badge';badge.textContent=pending?'Pendiente':'Vinculado'}
-      if(optional)optional.textContent='El archivo sigue existiendo en tu Google Drive. Firebase continúa guardando aunque Google necesite reconexión.';
+      if(badge){badge.className='status-badge warn';badge.textContent='Reconexión necesaria'}
+      if(optional)optional.textContent='Tus datos siguen protegidos en Firebase. Reconectar Google permite que la segunda copia externa vuelva a quedar al día.';
+      if(issue){issue.textContent='La hoja no se perdió ni se creó de nuevo. Solo se necesita renovar el permiso de Google para continuar actualizando el mismo archivo.';issue.classList.remove('hidden')}
+    }else{
+      text.textContent=`Google Sheets vinculado${googleSheetsMeta.lastSyncAt?' · última copia '+new Date(googleSheetsMeta.lastSyncAt).toLocaleString('es-CO'):''}. La configuración queda guardada aunque cierres sesión en NEXA.`;
+      btn.textContent=pending?'Reanudar copia':'Actualizar ahora';
+      if(badge){badge.className='status-badge success';badge.textContent='Vinculado'}
+      if(optional)optional.textContent=pending?'Hay cambios pendientes. NEXA intentará reactivar Google; solo te pedirá reconectar si Google realmente requiere una nueva autorización.':'No necesitas configurar Google otra vez. NEXA seguirá usando esta misma hoja de respaldo.';
+      if(issue){issue.classList.add('hidden');issue.textContent=''}
     }
     if(openBtn)openBtn.classList.remove('hidden');
-    if(item){item.classList.add('connected');item.classList.toggle('issue',pending);item.classList.remove('optional')}
-    if(issue){issue.classList.add('hidden');issue.textContent=''}
+    if(item){item.classList.add('connected');item.classList.toggle('issue',googleReconnectRequired);item.classList.remove('optional')}
   }else{
-    text.textContent='Conecta una cuenta de Google y NEXA creará “NEXA CAPITAL - Respaldo” automáticamente.';
+    text.textContent='Conecta una cuenta de Google una sola vez y NEXA creará “NEXA CAPITAL - Respaldo” automáticamente.';
     btn.textContent='Conectar Google';
     if(badge){badge.className='status-badge';badge.textContent='Sin conectar'}
     if(item){item.classList.remove('connected','issue','optional')}
     if(issue){issue.textContent=googleConnectionIssue||'';issue.classList.toggle('hidden',!googleConnectionIssue)}
-    if(optional)optional.textContent='Después de conectarlo, cada cambio guardado se enviará automáticamente al mismo archivo. El Excel manual permanece abajo como exportación aparte.';
+    if(optional)optional.textContent='Después de conectarlo, cada cambio guardado se enviará al mismo archivo. El Excel manual permanece abajo como exportación aparte.';
     if(openBtn)openBtn.classList.add('hidden');
   }
   renderProtectionOverall()
 }
+function notifyGoogleReconnectNeeded(){
+  if(googleReconnectNoticeShown||!currentUser||!googleSheetsMeta.sheetId)return;
+  googleReconnectNoticeShown=true;
+  showToast('Google Sheets necesita reconexión','Firebase sigue guardando tus datos. Reconecta Google para que la segunda copia externa vuelva a actualizarse automáticamente.','info');
+}
+
 function requestGoogleAccess(){
   return new Promise((resolve,reject)=>{
     let settled=false;
@@ -1111,7 +1202,9 @@ function requestGoogleAccess(){
           }
           googleAccessToken=resp?.access_token||'';
           if(!googleAccessToken)return finishBad(new Error('Google no entregó un token de autorización.'));
+          googleTokenOwnerUid=currentUser?.id||'';
           googleConnectionIssue='';
+          googleReconnectRequired=false;googleReconnectNoticeShown=false;
           googleSheetsMeta.googleConnected=true;
           googleSheetsMeta.connectedAt=googleSheetsMeta.connectedAt||new Date().toISOString();
           persistGoogleSheetsMeta().catch(()=>{});
@@ -1134,7 +1227,8 @@ function requestGoogleAccess(){
           finishBad(new Error(`Google no pudo completar la autorización (${type}). Cliente OAuth NEXA ${NEXA_GOOGLE_OAUTH_CLIENT_ID.split('-')[0]}-…-${NEXA_GOOGLE_OAUTH_CLIENT_ID.replace('.apps.googleusercontent.com','').slice(-6)} · origen ${location.origin}.`));
         }
       });
-      googleSheetsTokenClient.requestAccessToken({prompt:googleAccessToken?'':'select_account consent'});
+      const oauthPrompt=googleSheetsMeta.sheetId?'':'select_account consent';
+      googleSheetsTokenClient.requestAccessToken({prompt:oauthPrompt});
     }catch(e){finishBad(e)}
   })
 }
@@ -1145,7 +1239,7 @@ async function googleApi(url,options={}){
   const res=await fetch(url,{...options,headers});
   const data=await res.json().catch(()=>({}));
   if(!res.ok){
-    if(res.status===401){googleAccessToken='';throw new Error('La autorización de Google venció. Pulsa “Reconectar Google”.')}
+    if(res.status===401){googleAccessToken='';googleReconnectRequired=true;notifyGoogleReconnectNeeded();renderGoogleSheetsState();throw new Error('La autorización de Google venció. Reconecta Google para continuar actualizando la segunda copia.')}
     const raw=data?.error?.message||`Google API ${res.status}`,low=raw.toLowerCase();
     if(low.includes('has not been used')||low.includes('disabled')||low.includes('accessnotconfigured'))throw new Error('Falta habilitar Google Sheets API en Google Cloud. Es una configuración única del administrador.');
     if(low.includes('origin')||low.includes('redirect_uri_mismatch')||low.includes('unauthorized_client'))throw new Error(`En Google Cloud agrega ${location.origin} en Orígenes de JavaScript autorizados del OAuth Client. No se configura en Firebase Authentication.`);
@@ -1165,7 +1259,7 @@ async function ensureGoogleSpreadsheet(){
 }
 async function syncGoogleSheetsNow(showResult=true){
   if(googleSheetsSyncInFlight)return false;
-  if(!googleAccessToken){if(showResult)showToast('Google necesita autorización','Pulsa “Reconectar Google” para continuar la copia en vivo.','info');return false}
+  if(!googleAccessToken){googleReconnectRequired=true;renderGoogleSheetsState();if(showResult)notifyGoogleReconnectNeeded();return false}
   googleSheetsSyncInFlight=true;
   try{
     const sheetId=await ensureGoogleSpreadsheet(),tables=backupTables(),names=Object.keys(tables),ranges=names.map(n=>`'${n.replace(/'/g,"''")}'!A:Z`);
@@ -1185,13 +1279,13 @@ async function googleSheetsSync(){
     googleConnectionIssue='';renderGoogleSheetsState();
     if(!googleAccessToken)await requestGoogleAccess();
     const ok=await syncGoogleSheetsNow(true);if(ok){googleConnectionIssue='';renderGoogleSheetsState()}
-  }catch(e){console.error('Google connect:',e);googleConnectionIssue=e.message||'Revisa la autorización de Google.';renderGoogleSheetsState();showToast('No se pudo conectar Google',googleConnectionIssue,'bad')}
+  }catch(e){console.error('Google connect:',e);googleConnectionIssue=e.message||'Revisa la autorización de Google.';if(googleSheetsMeta.sheetId){googleReconnectRequired=true;notifyGoogleReconnectNeeded();}renderGoogleSheetsState();showToast('No se pudo conectar Google',googleConnectionIssue,'bad')}
 }
 function openGoogleSheet(){if(!googleSheetsMeta.sheetUrl)return showToast('Todavía no hay hoja de respaldo','Conecta Google primero.','bad');window.open(googleSheetsMeta.sheetUrl,'_blank','noopener')}
 function queueGoogleSheetsSync(){
   if(!googleSheetsMeta.sheetId)return;
   googleSheetsMeta.pendingAt=new Date().toISOString();persistGoogleSheetsMeta().catch(()=>{});renderGoogleSheetsState();
-  if(!googleAccessToken)return;
+  if(!googleAccessToken){googleReconnectRequired=true;renderGoogleSheetsState();notifyGoogleReconnectNeeded();return;}
   clearTimeout(googleSheetsSyncTimer);googleSheetsSyncTimer=setTimeout(()=>syncGoogleSheetsNow(false),900)
 }
 
