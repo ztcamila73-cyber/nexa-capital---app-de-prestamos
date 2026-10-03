@@ -875,6 +875,7 @@ const NEXA_FIREBASE_CONFIG={
   messagingSenderId:"796459330894",
   appId:"1:796459330894:web:c9f25c8e6f08c5e436421f"
 };
+window.NEXA_FIREBASE_CONFIG=NEXA_FIREBASE_CONFIG;
 
 /* Google Sheets se conecta DIRECTAMENTE con Google Identity Services.
    No depende de Google como proveedor de Firebase Authentication.
@@ -999,21 +1000,21 @@ function normalizeState(){db.businesses||=[];db.clients||=[];db.loans||=[];db.mo
 normalizeState();
 
 function firebaseConfigured(){
-  const c=window.NEXA_FIREBASE_CONFIG||NEXA_FIREBASE_CONFIG;
-  return !!(c && typeof c==='object' && String(c.apiKey||'').trim() && String(c.authDomain||'').trim() && String(c.databaseURL||'').trim() && String(c.projectId||'').trim() && String(c.appId||'').trim() && !String(c.apiKey).includes('PEGA_AQUI') && !String(c.projectId).includes('TU-PROYECTO'))
+  const c=NEXA_FIREBASE_CONFIG;
+  return !!(c && typeof c==='object' && ['apiKey','authDomain','databaseURL','projectId','appId'].every(k=>typeof c[k]==='string'&&c[k].trim()) && !c.apiKey.includes('PEGA_AQUI') && !c.projectId.includes('TU-PROYECTO'));
 }
 function cloudPath(uid,suffix=''){return `users/${uid}/${APP_PATH}${suffix?'/'+suffix:''}`}
 function setCloud(kind,text){const pill=$('cloudPill'),s=$('firebaseStateText'),badge=$('firebaseProtectionBadge');if(pill){pill.className='cloud-pill '+(kind||'');pill.textContent=text}if(s)s.textContent=kind==='ok'?'Activa · cada cambio se guarda automáticamente':kind==='work'?'Guardando cambios en la nube…':kind==='bad'?'No se pudo confirmar el guardado en la nube':text;if(badge){badge.className='status-badge '+(kind==='ok'?'success':kind==='bad'?'error':'warn');badge.textContent=kind==='ok'?'Activa':kind==='bad'?'Revisar':'Guardando'}renderProtectionOverall()}
 function validEmail(email){return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i.test(String(email||'').trim())}
 function firebaseErrorText(e){const code=String(e?.code||'');if(code.includes('invalid-email'))return 'El correo no tiene un formato válido.';if(code.includes('invalid-credential')||code.includes('wrong-password')||code.includes('user-not-found'))return 'Correo o contraseña incorrectos.';if(code.includes('email-already-in-use'))return 'Ese correo ya tiene una cuenta.';if(code.includes('weak-password'))return 'La contraseña debe tener al menos 6 caracteres.';if(code.includes('network'))return 'No hay conexión estable a Internet.';if(code.includes('too-many-requests'))return 'Hubo demasiados intentos. Espera un momento y vuelve a intentar.';return 'No se pudo completar la operación. Intenta nuevamente.'}
 function initFirebase(){
-  const config=window.NEXA_FIREBASE_CONFIG||NEXA_FIREBASE_CONFIG;
+  const config=NEXA_FIREBASE_CONFIG;
   if(!firebaseConfigured()){
     console.error('NEXA Firebase config incompleta:',config);
     $('firebaseSetupNote').classList.remove('hidden');
     setCloud('bad','Firebase no disponible');
-    showToast('Firebase no disponible','La configuración de NEXA no se pudo cargar. Recarga la aplicación o vuelve a desplegar este archivo.','bad');
-    return false
+    showToast('Firebase no disponible','La configuración de NEXA no se pudo cargar.','bad');
+    return false;
   }
   try{
     if(typeof firebase==='undefined')throw new Error('El SDK de Firebase no se cargó.');
