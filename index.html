@@ -1007,58 +1007,55 @@ function cloudPath(uid,suffix=''){return `users/${uid}/${APP_PATH}${suffix?'/'+s
 function setCloud(kind,text){const pill=$('cloudPill'),s=$('firebaseStateText'),badge=$('firebaseProtectionBadge');if(pill){pill.className='cloud-pill '+(kind||'');pill.textContent=text}if(s)s.textContent=kind==='ok'?'Activa · cada cambio se guarda automáticamente':kind==='work'?'Guardando cambios en la nube…':kind==='bad'?'No se pudo confirmar el guardado en la nube':text;if(badge){badge.className='status-badge '+(kind==='ok'?'success':kind==='bad'?'error':'warn');badge.textContent=kind==='ok'?'Activa':kind==='bad'?'Revisar':'Guardando'}renderProtectionOverall()}
 function validEmail(email){return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i.test(String(email||'').trim())}
 function firebaseErrorText(e){const code=String(e?.code||'');if(code.includes('invalid-email'))return 'El correo no tiene un formato válido.';if(code.includes('invalid-credential')||code.includes('wrong-password')||code.includes('user-not-found'))return 'Correo o contraseña incorrectos.';if(code.includes('email-already-in-use'))return 'Ese correo ya tiene una cuenta.';if(code.includes('weak-password'))return 'La contraseña debe tener al menos 6 caracteres.';if(code.includes('network'))return 'No hay conexión estable a Internet.';if(code.includes('too-many-requests'))return 'Hubo demasiados intentos. Espera un momento y vuelve a intentar.';return 'No se pudo completar la operación. Intenta nuevamente.'}
-function initFirebase(){
-  const config=NEXA_FIREBASE_CONFIG;
+async function ensureFirebaseSDK(){
+  if(window.firebase && typeof window.firebase.initializeApp==='function' && typeof window.firebase.auth==='function' && typeof window.firebase.database==='function') return true;
+  const urls=[
+    'https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js',
+    'https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js',
+    'https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js'
+  ];
+  for(const src of urls){
+    if([...document.scripts].some(x=>x.src===src)) continue;
+    await new Promise((resolve,reject)=>{const sc=document.createElement('script');sc.src=src;sc.async=false;sc.onload=resolve;sc.onerror=()=>reject(new Error('No se pudo cargar el SDK de Firebase.'));document.head.appendChild(sc);});
+  }
+  return !!(window.firebase && typeof window.firebase.initializeApp==='function' && typeof window.firebase.auth==='function' && typeof window.firebase.database==='function');
+}
+async function initFirebase(){
+  const config=window.NEXA_FIREBASE_CONFIG || NEXA_FIREBASE_CONFIG;
   firebaseInitError='';
   if(!firebaseConfigured()){
-    firebaseInitError='La configuración de Firebase está incompleta en el archivo.';
+    firebaseInitError='La configuración de Firebase de NEXA CAPITAL está incompleta.';
     console.error('NEXA Firebase config incompleta:',config);
-    $('firebaseSetupNote').classList.remove('hidden');
-    setCloud('bad','Firebase no disponible');
-    showToast('Firebase no disponible',firebaseInitError,'bad');
+    const note=$('firebaseSetupNote'); if(note) note.classList.remove('hidden');
+    setCloud('bad','Configuración de Firebase incompleta');
+    showToast('Configuración de Firebase',firebaseInitError,'bad');
     return false;
   }
   try{
-    if(typeof firebase==='undefined')throw new Error('El SDK de Firebase no se cargó en el navegador.');
-    if(!firebase.apps)throw new Error('El SDK de Firebase se cargó, pero no expuso la aplicación compat.');
-    firebaseApp=firebase.apps.length?firebase.app():firebase.initializeApp(config);
-
-    // Authentication es independiente de Realtime Database.
-    // No dejamos que un fallo de Database impida que aparezca el acceso a la cuenta.
-    if(typeof firebase.auth!=='function')throw new Error('El SDK de Firebase Authentication no se cargó.');
-    cloudAuth=firebase.auth();
-    if(!cloudAuth)throw new Error('Firebase Authentication no pudo inicializarse.');
-    try{cloudAuth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(err=>console.warn('No se pudo establecer persistencia local:',err));}catch(err){console.warn('Persistencia de Firebase no disponible:',err)}
-
-    try{
-      if(typeof firebase.database==='function') cloudDb=firebase.database();
-      else console.warn('Firebase Realtime Database SDK no está disponible.');
-    }catch(dbErr){
-      cloudDb=null;
-      console.error('Firebase Authentication está disponible, pero Realtime Database no pudo inicializarse:',dbErr);
-    }
-
+    await ensureFirebaseSDK();
+    if(typeof window.firebase==='undefined') throw new Error('El SDK de Firebase no se cargó.');
+    if(!Array.isArray(window.firebase.apps)) throw new Error('El SDK de Firebase no expuso la API esperada.');
+    firebaseApp=window.firebase.apps.length ? window.firebase.app() : window.firebase.initializeApp(config);
+    if(typeof window.firebase.auth!=='function') throw new Error('Firebase Authentication no está disponible.');
+    cloudAuth=window.firebase.auth();
+    if(!cloudAuth) throw new Error('Firebase Authentication no pudo inicializarse.');
+    try{const persistence=window.firebase.auth.Auth?.Persistence?.LOCAL;if(persistence) await cloudAuth.setPersistence(persistence);}catch(err){console.warn('Persistencia local:',err)}
+    try{cloudDb=typeof window.firebase.database==='function'?window.firebase.database():null;}catch(dbErr){cloudDb=null;console.error('Realtime Database:',dbErr);}
     cloudAuth.onAuthStateChanged(async user=>{
       if(user){
         if(googleTokenOwnerUid&&googleTokenOwnerUid!==user.uid){googleAccessToken='';googleTokenOwnerUid='';googleSheetsTokenClient=null;}
         currentUser={id:user.uid,email:user.email||'',name:user.displayName||(user.email||'Usuario').split('@')[0]};
         if(cloudDb) await loadCloudState(user.uid);
-        else {
-          setCloud('bad','Base de datos no disponible');
-          showToast('Firebase conectado','La autenticación funciona, pero Realtime Database no está disponible en este momento.','bad');
-        }
+        else showToast('Firebase conectado','Authentication funciona, pero Realtime Database no está disponible.','bad');
         openAfterLogin();
-      }else{
-        currentUser=null;
-        showOnly('authScreen');
-      }
+      }else{currentUser=null;showOnly('authScreen');}
     });
     setCloud('ok','Firebase conectado');
     return true;
   }catch(e){
     firebaseInitError=String(e?.message||e||'No se pudo inicializar Firebase.');
     console.error('Error inicializando Firebase:',e);
-    setCloud('bad','Error Firebase');
+    setCloud('bad','Error de conexión con Firebase');
     showToast('No se pudo conectar con Firebase',firebaseInitError,'bad');
     return false;
   }
@@ -1565,8 +1562,7 @@ function bindEvents(){
 }
 
 bindEvents();
-initFirebase();
-if(!firebaseConfigured())showOnly('authScreen');
+initFirebase().catch(err=>{console.error('Error inesperado iniciando Firebase:',err);firebaseInitError=String(err?.message||err||'No se pudo iniciar Firebase.');showToast('Error al iniciar NEXA',firebaseInitError,'bad');showOnly('authScreen')});
 </script>
 </body>
 </html>
