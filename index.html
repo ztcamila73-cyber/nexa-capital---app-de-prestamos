@@ -1007,6 +1007,18 @@ function cloudPath(uid,suffix=''){return `users/${uid}/${APP_PATH}${suffix?'/'+s
 function setCloud(kind,text){const pill=$('cloudPill'),s=$('firebaseStateText'),badge=$('firebaseProtectionBadge');if(pill){pill.className='cloud-pill '+(kind||'');pill.textContent=text}if(s)s.textContent=kind==='ok'?'Activa · cada cambio se guarda automáticamente':kind==='work'?'Guardando cambios en la nube…':kind==='bad'?'No se pudo confirmar el guardado en la nube':text;if(badge){badge.className='status-badge '+(kind==='ok'?'success':kind==='bad'?'error':'warn');badge.textContent=kind==='ok'?'Activa':kind==='bad'?'Revisar':'Guardando'}renderProtectionOverall()}
 function validEmail(email){return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i.test(String(email||'').trim())}
 function firebaseErrorText(e){const code=String(e?.code||'');if(code.includes('invalid-email'))return 'El correo no tiene un formato válido.';if(code.includes('invalid-credential')||code.includes('wrong-password')||code.includes('user-not-found'))return 'Correo o contraseña incorrectos.';if(code.includes('email-already-in-use'))return 'Ese correo ya tiene una cuenta.';if(code.includes('weak-password'))return 'La contraseña debe tener al menos 6 caracteres.';if(code.includes('network'))return 'No hay conexión estable a Internet.';if(code.includes('too-many-requests'))return 'Hubo demasiados intentos. Espera un momento y vuelve a intentar.';return 'No se pudo completar la operación. Intenta nuevamente.'}
+async function loadFirebaseScript(src){
+  return await new Promise((resolve,reject)=>{
+    const existing=[...document.scripts].find(x=>x.src===src || x.src.split('?')[0]===src);
+    if(existing && existing.dataset.nexaFirebaseLoaded==='1'){resolve(true);return;}
+    const sc=document.createElement('script');
+    sc.src=src+(src.includes('?')?'&':'?')+'nexa='+Date.now();
+    sc.async=false;
+    sc.onload=()=>{sc.dataset.nexaFirebaseLoaded='1';resolve(true)};
+    sc.onerror=()=>reject(new Error('No se pudo cargar el SDK de Firebase desde '+src));
+    document.head.appendChild(sc);
+  });
+}
 async function ensureFirebaseSDK(){
   if(window.firebase && typeof window.firebase.initializeApp==='function' && typeof window.firebase.auth==='function' && typeof window.firebase.database==='function') return true;
   const urls=[
@@ -1015,8 +1027,8 @@ async function ensureFirebaseSDK(){
     'https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js'
   ];
   for(const src of urls){
-    if([...document.scripts].some(x=>x.src===src)) continue;
-    await new Promise((resolve,reject)=>{const sc=document.createElement('script');sc.src=src;sc.async=false;sc.onload=resolve;sc.onerror=()=>reject(new Error('No se pudo cargar el SDK de Firebase.'));document.head.appendChild(sc);});
+    if(window.firebase && ((src.includes('firebase-app') && typeof window.firebase.initializeApp==='function') || (src.includes('firebase-auth') && typeof window.firebase.auth==='function') || (src.includes('firebase-database') && typeof window.firebase.database==='function'))) continue;
+    await loadFirebaseScript(src);
   }
   return !!(window.firebase && typeof window.firebase.initializeApp==='function' && typeof window.firebase.auth==='function' && typeof window.firebase.database==='function');
 }
@@ -1028,35 +1040,40 @@ async function initFirebase(){
     console.error('NEXA Firebase config incompleta:',config);
     const note=$('firebaseSetupNote'); if(note) note.classList.remove('hidden');
     setCloud('bad','Configuración de Firebase incompleta');
-    showToast('Configuración de Firebase',firebaseInitError,'bad');
     return false;
   }
   try{
-    await ensureFirebaseSDK();
-    if(typeof window.firebase==='undefined') throw new Error('El SDK de Firebase no se cargó.');
+    const sdkReady=await ensureFirebaseSDK();
+    if(!sdkReady) throw new Error('El SDK de Firebase no terminó de cargarse. Revisa la conexión del navegador a www.gstatic.com.');
+    if(!window.firebase || typeof window.firebase.initializeApp!=='function') throw new Error('Firebase App no está disponible.');
     if(!Array.isArray(window.firebase.apps)) throw new Error('El SDK de Firebase no expuso la API esperada.');
     firebaseApp=window.firebase.apps.length ? window.firebase.app() : window.firebase.initializeApp(config);
     if(typeof window.firebase.auth!=='function') throw new Error('Firebase Authentication no está disponible.');
     cloudAuth=window.firebase.auth();
     if(!cloudAuth) throw new Error('Firebase Authentication no pudo inicializarse.');
-    try{const persistence=window.firebase.auth.Auth?.Persistence?.LOCAL;if(persistence) await cloudAuth.setPersistence(persistence);}catch(err){console.warn('Persistencia local:',err)}
-    try{cloudDb=typeof window.firebase.database==='function'?window.firebase.database():null;}catch(dbErr){cloudDb=null;console.error('Realtime Database:',dbErr);}
+    try{
+      const persistence=window.firebase.auth.Auth?.Persistence?.LOCAL;
+      if(persistence) await cloudAuth.setPersistence(persistence);
+    }catch(err){console.warn('Persistencia local:',err)}
+    try{cloudDb=typeof window.firebase.database==='function'?window.firebase.database():null}catch(dbErr){cloudDb=null;console.error('Realtime Database:',dbErr)}
+    if(!cloudDb) console.warn('Firebase Authentication está disponible, pero Realtime Database no pudo inicializarse.');
     cloudAuth.onAuthStateChanged(async user=>{
       if(user){
         if(googleTokenOwnerUid&&googleTokenOwnerUid!==user.uid){googleAccessToken='';googleTokenOwnerUid='';googleSheetsTokenClient=null;}
         currentUser={id:user.uid,email:user.email||'',name:user.displayName||(user.email||'Usuario').split('@')[0]};
         if(cloudDb) await loadCloudState(user.uid);
-        else showToast('Firebase conectado','Authentication funciona, pero Realtime Database no está disponible.','bad');
+        else showToast('Firebase conectado','La autenticación funciona, pero Realtime Database no está disponible.','bad');
         openAfterLogin();
       }else{currentUser=null;showOnly('authScreen');}
     });
     setCloud('ok','Firebase conectado');
+    firebaseInitError='';
     return true;
   }catch(e){
     firebaseInitError=String(e?.message||e||'No se pudo inicializar Firebase.');
     console.error('Error inicializando Firebase:',e);
+    cloudAuth=null;cloudDb=null;firebaseApp=null;
     setCloud('bad','Error de conexión con Firebase');
-    showToast('No se pudo conectar con Firebase',firebaseInitError,'bad');
     return false;
   }
 }
@@ -1074,9 +1091,9 @@ function showToast(title,text='',kind='good'){const el=document.createElement('d
 function showLogin(){$('loginBox').classList.remove('hidden');$('registerBox').classList.add('hidden');$('forgotBox').classList.add('hidden')}
 function showRegister(){$('loginBox').classList.add('hidden');$('registerBox').classList.remove('hidden');$('forgotBox').classList.add('hidden')}
 function showForgot(){$('loginBox').classList.add('hidden');$('registerBox').classList.add('hidden');$('forgotBox').classList.remove('hidden');$('forgotEmail').value=$('loginEmail').value||''}
-async function login(){if(!cloudAuth)return showToast('Firebase no está listo',firebaseInitError||'No se pudo inicializar Firebase. Recarga la página e inténtalo de nuevo.','bad');const email=$('loginEmail').value.trim().toLowerCase(),pass=$('loginPass').value;if(!email)return showToast('Escribe tu correo','Ingresa el correo con el que registraste NEXA.','bad');if(!validEmail(email))return showToast('Revisa el correo','Ejemplo: nombre@correo.com','bad');if(!pass)return showToast('Escribe tu contraseña','','bad');try{await cloudAuth.signInWithEmailAndPassword(email,pass)}catch(e){showToast('No se pudo iniciar sesión',firebaseErrorText(e),'bad')}}
-async function register(){if(!cloudAuth)return showToast('Firebase no está listo',firebaseInitError||'No se pudo inicializar Firebase. Recarga la página e inténtalo de nuevo.','bad');const name=$('regName').value.trim(),email=$('regEmail').value.trim().toLowerCase(),pass=$('regPass').value;if(!name)return showToast('Escribe tu nombre','','bad');if(!validEmail(email))return showToast('Revisa el correo','Usa un correo válido, por ejemplo nombre@correo.com.','bad');if(pass.length<6)return showToast('Contraseña muy corta','Usa mínimo 6 caracteres.','bad');try{const cred=await cloudAuth.createUserWithEmailAndPassword(email,pass);await cred.user.updateProfile({displayName:name});currentUser={id:cred.user.uid,email,name};await loadCloudState(cred.user.uid);openAfterLogin()}catch(e){showToast('No se pudo crear la cuenta',firebaseErrorText(e),'bad')}}
-async function resetPassword(){if(!cloudAuth)return showToast('Firebase no está listo',firebaseInitError||'No se pudo inicializar Firebase. Recarga la página e inténtalo de nuevo.','bad');const email=$('forgotEmail').value.trim().toLowerCase();if(!email)return showToast('Escribe tu correo','','bad');if(!validEmail(email))return showToast('Revisa el correo','Ejemplo: nombre@correo.com','bad');try{await cloudAuth.sendPasswordResetEmail(email);showLogin();showToast('Revisa tu correo','Se envió el enlace para cambiar la contraseña.')}catch(e){showToast('No se pudo enviar',firebaseErrorText(e),'bad')}}
+async function login(){if(!cloudAuth){const ready=await initFirebase();if(!ready||!cloudAuth)return showToast('Firebase no está disponible',firebaseInitError||'No se pudo iniciar Firebase. Revisa la conexión y vuelve a intentarlo.','bad')}const email=$('loginEmail').value.trim().toLowerCase(),pass=$('loginPass').value;if(!email)return showToast('Escribe tu correo','Ingresa el correo con el que registraste NEXA.','bad');if(!validEmail(email))return showToast('Revisa el correo','Ejemplo: nombre@correo.com','bad');if(!pass)return showToast('Escribe tu contraseña','','bad');try{await cloudAuth.signInWithEmailAndPassword(email,pass)}catch(e){showToast('No se pudo iniciar sesión',firebaseErrorText(e),'bad')}}
+async function register(){if(!cloudAuth){const ready=await initFirebase();if(!ready||!cloudAuth)return showToast('Firebase no está disponible',firebaseInitError||'No se pudo iniciar Firebase. Revisa la conexión y vuelve a intentarlo.','bad')}const name=$('regName').value.trim(),email=$('regEmail').value.trim().toLowerCase(),pass=$('regPass').value;if(!name)return showToast('Escribe tu nombre','','bad');if(!validEmail(email))return showToast('Revisa el correo','Usa un correo válido, por ejemplo nombre@correo.com.','bad');if(pass.length<6)return showToast('Contraseña muy corta','Usa mínimo 6 caracteres.','bad');try{const cred=await cloudAuth.createUserWithEmailAndPassword(email,pass);await cred.user.updateProfile({displayName:name});currentUser={id:cred.user.uid,email,name};await loadCloudState(cred.user.uid);openAfterLogin()}catch(e){showToast('No se pudo crear la cuenta',firebaseErrorText(e),'bad')}}
+async function resetPassword(){if(!cloudAuth){const ready=await initFirebase();if(!ready||!cloudAuth)return showToast('Firebase no está disponible',firebaseInitError||'No se pudo iniciar Firebase. Revisa la conexión y vuelve a intentarlo.','bad')}const email=$('forgotEmail').value.trim().toLowerCase();if(!email)return showToast('Escribe tu correo','','bad');if(!validEmail(email))return showToast('Revisa el correo','Ejemplo: nombre@correo.com','bad');try{await cloudAuth.sendPasswordResetEmail(email);showLogin();showToast('Revisa tu correo','Se envió el enlace para cambiar la contraseña.')}catch(e){showToast('No se pudo enviar',firebaseErrorText(e),'bad')}}
 async function logout(){stopGoogleSheetsMetaListener();if(cloudAuth)await cloudAuth.signOut();currentBusinessId=null;currentUser=null;showOnly('authScreen')}
 
 function protectionOnboardingKey(){return PROTECTION_ONBOARDING_KEY+(currentUser?.id||'guest')}
