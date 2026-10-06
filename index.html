@@ -900,7 +900,7 @@ const emptyDB={version:1,businesses:[],clients:[],loans:[],movements:[]};
 let db=loadLocal();
 let currentUser=null,currentBusinessId=null,currentPage='home';
 let clientFilter='all',collectionFilter='all';
-let firebaseApp=null,cloudAuth=null,cloudDb=null,cloudLoading=false,cloudSaveTimer=null,cloudSaveInFlight=false,cloudDirty=false;
+let firebaseApp=null,cloudAuth=null,cloudDb=null,cloudLoading=false,cloudSaveTimer=null,cloudSaveInFlight=false,cloudDirty=false, firebaseInitError='';
 let lastRecalc=null;
 let businessModalMode='create';
 let pendingDeleteBusinessId=null;
@@ -1009,36 +1009,58 @@ function validEmail(email){return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i.test(String(e
 function firebaseErrorText(e){const code=String(e?.code||'');if(code.includes('invalid-email'))return 'El correo no tiene un formato válido.';if(code.includes('invalid-credential')||code.includes('wrong-password')||code.includes('user-not-found'))return 'Correo o contraseña incorrectos.';if(code.includes('email-already-in-use'))return 'Ese correo ya tiene una cuenta.';if(code.includes('weak-password'))return 'La contraseña debe tener al menos 6 caracteres.';if(code.includes('network'))return 'No hay conexión estable a Internet.';if(code.includes('too-many-requests'))return 'Hubo demasiados intentos. Espera un momento y vuelve a intentar.';return 'No se pudo completar la operación. Intenta nuevamente.'}
 function initFirebase(){
   const config=NEXA_FIREBASE_CONFIG;
+  firebaseInitError='';
   if(!firebaseConfigured()){
+    firebaseInitError='La configuración de Firebase está incompleta en el archivo.';
     console.error('NEXA Firebase config incompleta:',config);
     $('firebaseSetupNote').classList.remove('hidden');
     setCloud('bad','Firebase no disponible');
-    showToast('Firebase no disponible','La configuración de NEXA no se pudo cargar.','bad');
+    showToast('Firebase no disponible',firebaseInitError,'bad');
     return false;
   }
   try{
-    if(typeof firebase==='undefined')throw new Error('El SDK de Firebase no se cargó.');
-    firebaseApp=firebase.apps?.length?firebase.app():firebase.initializeApp(config);
+    if(typeof firebase==='undefined')throw new Error('El SDK de Firebase no se cargó en el navegador.');
+    if(!firebase.apps)throw new Error('El SDK de Firebase se cargó, pero no expuso la aplicación compat.');
+    firebaseApp=firebase.apps.length?firebase.app():firebase.initializeApp(config);
+
+    // Authentication es independiente de Realtime Database.
+    // No dejamos que un fallo de Database impida que aparezca el acceso a la cuenta.
+    if(typeof firebase.auth!=='function')throw new Error('El SDK de Firebase Authentication no se cargó.');
     cloudAuth=firebase.auth();
-    cloudDb=firebase.database();
-    cloudAuth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});
+    if(!cloudAuth)throw new Error('Firebase Authentication no pudo inicializarse.');
+    try{cloudAuth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(err=>console.warn('No se pudo establecer persistencia local:',err));}catch(err){console.warn('Persistencia de Firebase no disponible:',err)}
+
+    try{
+      if(typeof firebase.database==='function') cloudDb=firebase.database();
+      else console.warn('Firebase Realtime Database SDK no está disponible.');
+    }catch(dbErr){
+      cloudDb=null;
+      console.error('Firebase Authentication está disponible, pero Realtime Database no pudo inicializarse:',dbErr);
+    }
+
     cloudAuth.onAuthStateChanged(async user=>{
       if(user){
         if(googleTokenOwnerUid&&googleTokenOwnerUid!==user.uid){googleAccessToken='';googleTokenOwnerUid='';googleSheetsTokenClient=null;}
         currentUser={id:user.uid,email:user.email||'',name:user.displayName||(user.email||'Usuario').split('@')[0]};
-        await loadCloudState(user.uid);
+        if(cloudDb) await loadCloudState(user.uid);
+        else {
+          setCloud('bad','Base de datos no disponible');
+          showToast('Firebase conectado','La autenticación funciona, pero Realtime Database no está disponible en este momento.','bad');
+        }
         openAfterLogin();
       }else{
         currentUser=null;
         showOnly('authScreen');
       }
     });
-    return true
+    setCloud('ok','Firebase conectado');
+    return true;
   }catch(e){
+    firebaseInitError=String(e?.message||e||'No se pudo inicializar Firebase.');
     console.error('Error inicializando Firebase:',e);
     setCloud('bad','Error Firebase');
-    showToast('No se pudo conectar con Firebase',e?.message||'Revisa la configuración del proyecto Firebase.','bad');
-    return false
+    showToast('No se pudo conectar con Firebase',firebaseInitError,'bad');
+    return false;
   }
 }
 async function loadCloudState(uid){if(!cloudDb)return;cloudLoading=true;setCloud('work','Cargando…');try{const snap=await cloudDb.ref(cloudPath(uid,'state')).once('value');const remote=snap.val();if(remote?.data){applyState(remote.data)}else if((db.businesses?.length||0)+(db.clients?.length||0)+(db.loans?.length||0)>0){await cloudDb.ref(cloudPath(uid,'state')).set({data:appState(),updatedAt:new Date().toISOString()})}else{applyState({})}localStorage.setItem(CLOUD_OWNER_KEY,uid);localStorage.setItem(CLOUD_DIRTY_KEY,'0');setCloud('ok','Nube al día');await loadGoogleSheetsMeta();await maybeDailyBackup(appState(),'respaldo automático al iniciar');await loadBackupStatus();checkProtectionReminder()}catch(e){console.error(e);setCloud('bad','Error al cargar nube');showToast('No se pudo cargar Firebase',firebaseErrorText(e),'bad')}finally{cloudLoading=false}}
@@ -1055,9 +1077,9 @@ function showToast(title,text='',kind='good'){const el=document.createElement('d
 function showLogin(){$('loginBox').classList.remove('hidden');$('registerBox').classList.add('hidden');$('forgotBox').classList.add('hidden')}
 function showRegister(){$('loginBox').classList.add('hidden');$('registerBox').classList.remove('hidden');$('forgotBox').classList.add('hidden')}
 function showForgot(){$('loginBox').classList.add('hidden');$('registerBox').classList.add('hidden');$('forgotBox').classList.remove('hidden');$('forgotEmail').value=$('loginEmail').value||''}
-async function login(){if(!cloudAuth)return showToast('Firebase sin configurar','Primero conecta el proyecto Firebase nuevo.','bad');const email=$('loginEmail').value.trim().toLowerCase(),pass=$('loginPass').value;if(!email)return showToast('Escribe tu correo','Ingresa el correo con el que registraste NEXA.','bad');if(!validEmail(email))return showToast('Revisa el correo','Ejemplo: nombre@correo.com','bad');if(!pass)return showToast('Escribe tu contraseña','','bad');try{await cloudAuth.signInWithEmailAndPassword(email,pass)}catch(e){showToast('No se pudo iniciar sesión',firebaseErrorText(e),'bad')}}
-async function register(){if(!cloudAuth)return showToast('Firebase sin configurar','Primero conecta el proyecto Firebase nuevo.','bad');const name=$('regName').value.trim(),email=$('regEmail').value.trim().toLowerCase(),pass=$('regPass').value;if(!name)return showToast('Escribe tu nombre','','bad');if(!validEmail(email))return showToast('Revisa el correo','Usa un correo válido, por ejemplo nombre@correo.com.','bad');if(pass.length<6)return showToast('Contraseña muy corta','Usa mínimo 6 caracteres.','bad');try{const cred=await cloudAuth.createUserWithEmailAndPassword(email,pass);await cred.user.updateProfile({displayName:name});currentUser={id:cred.user.uid,email,name};await loadCloudState(cred.user.uid);openAfterLogin()}catch(e){showToast('No se pudo crear la cuenta',firebaseErrorText(e),'bad')}}
-async function resetPassword(){if(!cloudAuth)return showToast('Firebase sin configurar','','bad');const email=$('forgotEmail').value.trim().toLowerCase();if(!email)return showToast('Escribe tu correo','','bad');if(!validEmail(email))return showToast('Revisa el correo','Ejemplo: nombre@correo.com','bad');try{await cloudAuth.sendPasswordResetEmail(email);showLogin();showToast('Revisa tu correo','Se envió el enlace para cambiar la contraseña.')}catch(e){showToast('No se pudo enviar',firebaseErrorText(e),'bad')}}
+async function login(){if(!cloudAuth)return showToast('Firebase no está listo',firebaseInitError||'No se pudo inicializar Firebase. Recarga la página e inténtalo de nuevo.','bad');const email=$('loginEmail').value.trim().toLowerCase(),pass=$('loginPass').value;if(!email)return showToast('Escribe tu correo','Ingresa el correo con el que registraste NEXA.','bad');if(!validEmail(email))return showToast('Revisa el correo','Ejemplo: nombre@correo.com','bad');if(!pass)return showToast('Escribe tu contraseña','','bad');try{await cloudAuth.signInWithEmailAndPassword(email,pass)}catch(e){showToast('No se pudo iniciar sesión',firebaseErrorText(e),'bad')}}
+async function register(){if(!cloudAuth)return showToast('Firebase no está listo',firebaseInitError||'No se pudo inicializar Firebase. Recarga la página e inténtalo de nuevo.','bad');const name=$('regName').value.trim(),email=$('regEmail').value.trim().toLowerCase(),pass=$('regPass').value;if(!name)return showToast('Escribe tu nombre','','bad');if(!validEmail(email))return showToast('Revisa el correo','Usa un correo válido, por ejemplo nombre@correo.com.','bad');if(pass.length<6)return showToast('Contraseña muy corta','Usa mínimo 6 caracteres.','bad');try{const cred=await cloudAuth.createUserWithEmailAndPassword(email,pass);await cred.user.updateProfile({displayName:name});currentUser={id:cred.user.uid,email,name};await loadCloudState(cred.user.uid);openAfterLogin()}catch(e){showToast('No se pudo crear la cuenta',firebaseErrorText(e),'bad')}}
+async function resetPassword(){if(!cloudAuth)return showToast('Firebase no está listo',firebaseInitError||'No se pudo inicializar Firebase. Recarga la página e inténtalo de nuevo.','bad');const email=$('forgotEmail').value.trim().toLowerCase();if(!email)return showToast('Escribe tu correo','','bad');if(!validEmail(email))return showToast('Revisa el correo','Ejemplo: nombre@correo.com','bad');try{await cloudAuth.sendPasswordResetEmail(email);showLogin();showToast('Revisa tu correo','Se envió el enlace para cambiar la contraseña.')}catch(e){showToast('No se pudo enviar',firebaseErrorText(e),'bad')}}
 async function logout(){stopGoogleSheetsMetaListener();if(cloudAuth)await cloudAuth.signOut();currentBusinessId=null;currentUser=null;showOnly('authScreen')}
 
 function protectionOnboardingKey(){return PROTECTION_ONBOARDING_KEY+(currentUser?.id||'guest')}
