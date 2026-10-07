@@ -753,6 +753,24 @@ body{background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSys
 .brand-logo{width:min(300px,82vw)!important;height:auto!important;max-height:250px!important;object-fit:contain!important}
 .select-logo,.welcome-logo{width:min(210px,62vw)!important;height:auto!important;max-height:150px!important;object-fit:contain!important;border:0!important;border-radius:0!important}
 .topbar-logo{object-fit:contain!important;border:0!important;border-radius:0!important}
+
+/* PrestApp · acceso sobrio con movimiento discreto */
+@keyframes prestappPageIn{from{opacity:0;transform:translateY(12px) scale(.99)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes prestappLogoIn{from{opacity:0;transform:translateY(8px) scale(.965)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes prestappContentIn{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
+@keyframes prestappSpin{to{transform:rotate(360deg)}}
+.auth-card{animation:prestappPageIn .68s cubic-bezier(.2,.75,.25,1) both}
+.auth .brand-logo{animation:prestappLogoIn .78s cubic-bezier(.2,.75,.25,1) .06s both}
+.auth .auth-title{animation:prestappContentIn .55s ease-out .15s both}
+.auth .tagline{animation:prestappContentIn .55s ease-out .21s both}
+#loginBox{animation:prestappContentIn .55s ease-out .25s both}
+#loginButton{min-height:50px;display:flex;align-items:center;justify-content:center;gap:9px;transition:transform .16s ease,box-shadow .2s ease,opacity .2s ease}
+#loginButton:not(:disabled):hover{transform:translateY(-1px);box-shadow:0 10px 22px rgba(11,29,51,.18)}
+#loginButton:not(:disabled):active{transform:scale(.985)}
+#loginButton:disabled{cursor:wait;opacity:.82}
+.login-spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,.42);border-top-color:#fff;border-radius:50%;animation:prestappSpin .7s linear infinite}
+@media(prefers-reduced-motion:reduce){.auth-card,.auth .brand-logo,.auth .auth-title,.auth .tagline,#loginBox{animation:none!important}#loginButton{transition:none!important}.login-spinner{animation:none!important;border-top-color:transparent}}
+
 </style>
 </head>
 <body>
@@ -762,16 +780,16 @@ body{background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSys
   <div class="auth-card">
     <div class="logo-row"><img class="brand-logo" src="prestapp-logo-transparent.png" alt="PrestApp"></div>
     <h1 id="authTitle" class="auth-title">Iniciar sesión</h1>
-    <p class="tagline">Accede para gestionar tus préstamos y cobros.</p>
+    <p class="tagline">Tu cartera, clara y en orden.</p>
 
-    <div id="loginBox">
-      <label class="label">Correo</label><input id="loginEmail" class="input" type="email" autocomplete="email" placeholder="correo@ejemplo.com">
-      <label class="label">Contraseña</label><input id="loginPass" class="input" type="password" autocomplete="current-password" placeholder="••••••••">
+    <form id="loginBox" aria-label="Iniciar sesión" novalidate>
+      <label class="label" for="loginEmail">Correo</label><input id="loginEmail" class="input" type="email" autocomplete="email" placeholder="correo@ejemplo.com">
+      <label class="label" for="loginPass">Contraseña</label><input id="loginPass" class="input" type="password" autocomplete="current-password" placeholder="••••••••">
       <div class="linkline"><button class="text-link" type="button" data-action="show-forgot">¿Olvidaste tu contraseña?</button></div>
-      <button class="primary full" type="button" data-action="login">Iniciar sesión</button>
+      <button id="loginButton" class="primary full" type="submit" aria-busy="false">Iniciar sesión</button>
       <div class="divider"></div>
       <button class="secondary full" type="button" data-action="show-register">Crear cuenta</button>
-    </div>
+    </form>
 
     <div id="registerBox" class="hidden">
       <label class="label">Nombre</label><input id="regName" class="input" autocomplete="name" placeholder="Tu nombre">
@@ -1197,7 +1215,20 @@ function showToast(title,text='',kind='good'){const el=document.createElement('d
 function showLogin(){$('loginBox').classList.remove('hidden');$('registerBox').classList.add('hidden');$('forgotBox').classList.add('hidden');if($('authTitle'))$('authTitle').textContent='Iniciar sesión'}
 function showRegister(){$('loginBox').classList.add('hidden');$('registerBox').classList.remove('hidden');$('forgotBox').classList.add('hidden');if($('authTitle'))$('authTitle').textContent='Crear cuenta'}
 function showForgot(){$('loginBox').classList.add('hidden');$('registerBox').classList.add('hidden');$('forgotBox').classList.remove('hidden');if($('authTitle'))$('authTitle').textContent='Recuperar contraseña';$('forgotEmail').value=$('loginEmail').value||''}
-async function login(){if(!cloudAuth){const ready=await initFirebase();if(!ready||!cloudAuth)return showToast('Firebase no está disponible',firebaseInitError||'No se pudo iniciar Firebase. Revisa la conexión y vuelve a intentarlo.','bad')}const email=$('loginEmail').value.trim().toLowerCase(),pass=$('loginPass').value;if(!email)return showToast('Escribe tu correo','Ingresa el correo con el que registraste PrestApp.','bad');if(!validEmail(email))return showToast('Revisa el correo','Ejemplo: nombre@correo.com','bad');if(!pass)return showToast('Escribe tu contraseña','','bad');try{await cloudAuth.signInWithEmailAndPassword(email,pass)}catch(e){showToast('No se pudo iniciar sesión',firebaseErrorText(e),'bad')}}
+async function login(){
+  const email=$('loginEmail').value.trim().toLowerCase(),pass=$('loginPass').value,button=$('loginButton');
+  if(!email){showToast('Escribe tu correo','Ingresa el correo con el que registraste PrestApp.','bad');$('loginEmail').focus();return}
+  if(!validEmail(email)){showToast('Revisa el correo','Ejemplo: nombre@correo.com','bad');$('loginEmail').focus();return}
+  if(!pass){showToast('Escribe tu contraseña','Ingresa tu contraseña para continuar.','bad');$('loginPass').focus();return}
+  if(button?.disabled)return;
+  const originalLabel=button?.innerHTML;
+  if(button){button.disabled=true;button.setAttribute('aria-busy','true');button.innerHTML='<span class="login-spinner" aria-hidden="true"></span><span>Verificando…</span>'}
+  try{
+    if(!cloudAuth){const ready=await initFirebase();if(!ready||!cloudAuth){showToast('Firebase no está disponible',firebaseInitError||'No se pudo conectar. Revisa tu conexión y vuelve a intentarlo.','bad');return}}
+    await cloudAuth.signInWithEmailAndPassword(email,pass);
+  }catch(e){showToast('No se pudo iniciar sesión',firebaseErrorText(e),'bad')}
+  finally{if(button){button.disabled=false;button.removeAttribute('aria-busy');button.innerHTML=originalLabel||'Iniciar sesión'}}
+}
 async function register(){if(!cloudAuth){const ready=await initFirebase();if(!ready||!cloudAuth)return showToast('Firebase no está disponible',firebaseInitError||'No se pudo iniciar Firebase. Revisa la conexión y vuelve a intentarlo.','bad')}const name=$('regName').value.trim(),email=$('regEmail').value.trim().toLowerCase(),pass=$('regPass').value;if(!name)return showToast('Escribe tu nombre','','bad');if(!validEmail(email))return showToast('Revisa el correo','Usa un correo válido, por ejemplo nombre@correo.com.','bad');if(pass.length<6)return showToast('Contraseña muy corta','Usa mínimo 6 caracteres.','bad');try{const cred=await cloudAuth.createUserWithEmailAndPassword(email,pass);await cred.user.updateProfile({displayName:name});currentUser={id:cred.user.uid,email,name};await loadCloudState(cred.user.uid);openAfterLogin()}catch(e){showToast('No se pudo crear la cuenta',firebaseErrorText(e),'bad')}}
 async function resetPassword(){if(!cloudAuth){const ready=await initFirebase();if(!ready||!cloudAuth)return showToast('Firebase no está disponible',firebaseInitError||'No se pudo iniciar Firebase. Revisa la conexión y vuelve a intentarlo.','bad')}const email=$('forgotEmail').value.trim().toLowerCase();if(!email)return showToast('Escribe tu correo','','bad');if(!validEmail(email))return showToast('Revisa el correo','Ejemplo: nombre@correo.com','bad');try{await cloudAuth.sendPasswordResetEmail(email);showLogin();showToast('Revisa tu correo','Se envió el enlace para cambiar la contraseña.')}catch(e){showToast('No se pudo enviar',firebaseErrorText(e),'bad')}}
 async function logout(){stopGoogleSheetsMetaListener();if(cloudAuth)await cloudAuth.signOut();currentBusinessId=null;currentUser=null;showOnly('authScreen')}
@@ -1670,6 +1701,7 @@ function showModal(){$('modal').classList.remove('hidden');document.body.classLi
 function closeModal(){$('modal').classList.add('hidden');document.body.classList.remove('modal-open');$('modalContent').innerHTML=''}
 
 function bindEvents(){
+  $('loginBox')?.addEventListener('submit',e=>{e.preventDefault();void login()});
   document.addEventListener('click',e=>{
     const action=e.target.closest('[data-action]')?.dataset.action;
     if(action==='show-register')showRegister();if(action==='show-login')showLogin();if(action==='show-forgot')showForgot();if(action==='login')login();if(action==='register')register();if(action==='reset-password')resetPassword();if(action==='logout')logout();if(action==='create-business')createBusiness();if(action==='business-selector')renderBusinessSelector();if(action==='close-modal')closeModal();if(action==='save-business-name')saveBusinessName();if(action==='save-loan')saveLoan();if(action==='home-search')renderSearchResults('homeSearchResults',$('homeSearch').value.trim());if(action==='client-search')renderClients();if(action==='collection-search')renderCollections();if(action==='rename-business')renameBusiness();if(action==='edit-business-capital')openBusinessCapitalModal();if(action==='save-business-capital')saveBusinessCapital();if(action==='confirm-delete-business')deleteBusiness();if(action==='verify-cloud')cloudSaveNow(true);if(action==='cloud-backup')cloudBackup('respaldo manual');if(action==='download-excel')downloadExcelBackup();if(action==='google-sheets-sync')googleSheetsSync();if(action==='open-google-sheet')openGoogleSheet();if(action==='download-backup')downloadBackup();if(action==='onboarding-later'){closeModal();showToast('Protección básica activa','Firebase y la copia diaria ya están funcionando. Puedes conectar Google más tarde.','info')}if(action==='onboarding-google'){closeModal();googleSheetsSync();}
