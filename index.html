@@ -440,6 +440,11 @@ details[open]>summary{border-bottom:1px solid var(--line-2)}
 .protection-shield{width:48px;height:48px;flex:0 0 48px;border-radius:16px;background:rgba(255,255,255,.13);color:var(--gold-2);display:grid;place-items:center;box-shadow:inset 0 1px 0 rgba(255,255,255,.15)}
 .protection-shield svg,.protection-icon svg,.onboarding-lock svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .protection-hero-title{font-weight:800;font-size:16px;letter-spacing:-.03em}
+.protection-banner{max-width:1120px;margin:12px auto 0;padding:0 14px}
+.protection-banner .pb{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;border-radius:18px;padding:13px 15px;border:1.5px solid #F3D9A8;background:var(--amber-soft);color:#7A3E08;font-size:13px;font-weight:700;line-height:1.45;box-shadow:var(--sh-1)}
+.protection-banner .pb.bad{border-color:#F0C6C2;background:var(--red-soft);color:#7F1D14}
+.protection-banner .pb span{flex:1 1 260px}
+@media(min-width:760px){.protection-banner{padding:0 24px}}@media(min-width:1000px){.protection-banner{padding:0 32px}}
 .protection-verify{margin-top:14px}.protection-verify-result{margin-top:10px;font-size:13px;line-height:1.7;color:var(--ink-2);font-weight:700}.protection-verify-result:empty{display:none}
 .protection-hero-sub{font-size:12.5px;color:#C7D3E3;margin-top:4px;line-height:1.5}
 .protection-list{display:grid;gap:10px}
@@ -625,6 +630,7 @@ document.addEventListener('error',function(e){var t=e.target;if(!t||t.tagName!==
     <div id="cloudPill" class="cloud-pill">Conectando…</div>
     <button class="logout-top" type="button" data-action="logout" aria-label="Cerrar sesión" title="Cerrar sesión"><svg viewBox="0 0 24 24"><path d="M10 5H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h4"/><path d="M14 8l4 4-4 4"/><path d="M18 12H9"/></svg><span>Cerrar sesión</span></button>
   </div></header>
+  <div id="protectionBanner" class="protection-banner hidden" role="alert"></div>
 
   <nav class="bottom-nav" aria-label="Navegación principal">
     <button class="nav-btn active" data-page="home" type="button"><span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M4.5 10.3 12 4l7.5 6.3"/><path d="M6.8 9.4V20h10.4V9.4"/></svg></span>Inicio</button>
@@ -826,7 +832,7 @@ let googleSheetsSyncTimer=null;
 let googleSheetsSyncInFlight=false;
 let googleSheetsMeta={sheetId:'',sheetUrl:'',lastSyncAt:'',googleConnected:false,googleEmail:'',connectedAt:'',pendingAt:''};
 let googleConnectionIssue='';
-let googleRenewBusy=false,googleLastRenewTry=0;
+let googleRenewBusy=false,googleLastRenewTry=0,googleMetaLoaded=false,backupChecked=false,googleOffToastShown=false;
 let googleReconnectRequired=false;
 let googleReconnectNoticeShown=false;
 let googleSheetsMetaRef=null;
@@ -1118,7 +1124,7 @@ function blockedWhileSyncing(e){
   if(!risky)return false;
   showToast('Sincronizando…','Espera un par de segundos a que cargue la nube y vuelve a pulsar.','info');return true
 }
-async function loadCloudState(uid){if(!cloudDb)return;cloudLoading=true;cloudLoadFailed=false;setCloud('work','Cargando…');try{const _t0=performance.now();const remote=await readRemoteState(uid);console.info('PrestApp: datos de la nube leídos en '+Math.round(performance.now()-_t0)+' ms');if(remote?.data){applyState(remote.data)}else if((db.businesses?.length||0)+(db.clients?.length||0)+(db.loans?.length||0)>0){await cloudDb.ref(cloudPath(uid,'state')).set({data:appState(),updatedAt:new Date().toISOString()})}else{applyState({})}localStorage.setItem(CLOUD_OWNER_KEY,uid);localStorage.setItem(CLOUD_DIRTY_KEY,'0');(lastCloudOkAt=new Date().toISOString(),setCloud('ok','Nube al día'));loadGoogleSheetsMeta().catch(()=>{});/* La copia diaria y su estado se hacen en segundo plano para no retrasar el inicio de sesión */Promise.resolve().then(async()=>{backupRunning=true;renderBackupStatus();try{await loadBackupStatus();if(!backupIsToday()){await pushBackup('respaldo diario automático',JSON.parse(JSON.stringify(appState())));localStorage.setItem(LAST_BACKUP_KEY+'_'+uid,today())}}catch(err){console.warn('Respaldo al iniciar:',err)}finally{backupRunning=false;renderBackupStatus();refreshBackupCount()}});checkProtectionReminder()}catch(e){console.error(e);cloudLoadFailed=true;setCloud('bad','Error al cargar nube');showToast('No se pudo cargar tus datos','Para no pisar tu información guardada, no se guardarán cambios hasta que cargue bien. Revisa Internet y recarga la página. '+firebaseErrorText(e),'bad')}finally{cloudLoading=false}}
+async function loadCloudState(uid){if(!cloudDb)return;cloudLoading=true;cloudLoadFailed=false;setCloud('work','Cargando…');try{const _t0=performance.now();const remote=await readRemoteState(uid);console.info('PrestApp: datos de la nube leídos en '+Math.round(performance.now()-_t0)+' ms');if(remote?.data){applyState(remote.data)}else if((db.businesses?.length||0)+(db.clients?.length||0)+(db.loans?.length||0)>0){await cloudDb.ref(cloudPath(uid,'state')).set({data:appState(),updatedAt:new Date().toISOString()})}else{applyState({})}localStorage.setItem(CLOUD_OWNER_KEY,uid);localStorage.setItem(CLOUD_DIRTY_KEY,'0');(lastCloudOkAt=new Date().toISOString(),setCloud('ok','Nube al día'));loadGoogleSheetsMeta().catch(()=>{});/* La copia diaria y su estado se hacen en segundo plano para no retrasar el inicio de sesión */Promise.resolve().then(async()=>{backupRunning=true;renderBackupStatus();try{await loadBackupStatus();if(!backupIsToday()){await pushBackup('respaldo diario automático',JSON.parse(JSON.stringify(appState())));localStorage.setItem(LAST_BACKUP_KEY+'_'+uid,today())}}catch(err){console.warn('Respaldo al iniciar:',err)}finally{backupRunning=false;backupChecked=true;renderBackupStatus();refreshBackupCount()}});checkProtectionReminder()}catch(e){console.error(e);cloudLoadFailed=true;setCloud('bad','Error al cargar nube');showToast('No se pudo cargar tus datos','Para no pisar tu información guardada, no se guardarán cambios hasta que cargue bien. Revisa Internet y recarga la página. '+firebaseErrorText(e),'bad')}finally{cloudLoading=false}}
 function saveLocal(){localStorage.setItem(APP_KEY,JSON.stringify(db));localStorage.setItem(CLOUD_DIRTY_KEY,'1');localStorage.setItem(CLOUD_UPDATED_KEY,new Date().toISOString());queueCloudSave();queueGoogleSheetsSync()}
 function queueCloudSave(){if(!cloudDb||!currentUser?.id||cloudLoading||cloudLoadFailed)return;cloudDirty=true;clearTimeout(cloudSaveTimer);cloudSaveTimer=setTimeout(()=>cloudSaveNow(false),180)}
 async function cloudSaveNow(notify=true){if(!cloudDb||!currentUser?.id||cloudLoadFailed)return false;if(cloudSaveInFlight){cloudDirty=true;return false}cloudSaveInFlight=true;try{do{cloudDirty=false;setCloud('work','Guardando…');const snapshot=appState(),updatedAt=new Date().toISOString();const ref=cloudDb.ref(cloudPath(currentUser.id,'state'));await ref.set({data:snapshot,updatedAt});const check=(await ref.once('value')).val();if(!check||check.updatedAt!==updatedAt)throw new Error('Firebase no confirmó la escritura.');localStorage.setItem(CLOUD_DIRTY_KEY,'0');(lastCloudOkAt=new Date().toISOString(),setCloud('ok','Nube al día'));await maybeDailyBackup(snapshot,'respaldo diario automático')}while(cloudDirty);if(notify)showToast('Nube verificada','Los datos fueron escritos y leídos nuevamente desde Firebase.');return true}catch(e){console.error(e);setCloud('bad','Sin sincronizar');if(notify)showToast('No se pudo verificar la nube',firebaseErrorText(e),'bad');return false}finally{cloudSaveInFlight=false}}
@@ -1187,11 +1193,24 @@ async function login(){
 }
 async function register(){if(!cloudAuth){const ready=await initFirebase();if(!ready||!cloudAuth)return showToast('Firebase no está disponible',firebaseInitError||'No se pudo iniciar Firebase. Revisa la conexión y vuelve a intentarlo.','bad')}const name=$('regName').value.trim(),email=$('regEmail').value.trim().toLowerCase(),pass=$('regPass').value;if(!name)return showToast('Escribe tu nombre','','bad');if(!validEmail(email))return showToast('Revisa el correo','Usa un correo válido, por ejemplo nombre@correo.com.','bad');if(pass.length<6)return showToast('Contraseña muy corta','Usa mínimo 6 caracteres.','bad');try{const cred=await cloudAuth.createUserWithEmailAndPassword(email,pass);await cred.user.updateProfile({displayName:name});if(currentUser&&currentUser.id===cred.user.uid){currentUser.name=name}else{currentUser={id:cred.user.uid,email,name};await loadCloudState(cred.user.uid);openAfterLogin()}}catch(e){showToast('No se pudo crear la cuenta',firebaseErrorText(e),'bad')}}
 async function resetPassword(){if(!cloudAuth){const ready=await initFirebase();if(!ready||!cloudAuth)return showToast('Firebase no está disponible',firebaseInitError||'No se pudo iniciar Firebase. Revisa la conexión y vuelve a intentarlo.','bad')}const email=$('forgotEmail').value.trim().toLowerCase();if(!email)return showToast('Escribe tu correo','','bad');if(!validEmail(email))return showToast('Revisa el correo','Ejemplo: nombre@correo.com','bad');try{await cloudAuth.sendPasswordResetEmail(email);showLogin();showToast('Revisa tu correo','Se envió el enlace para cambiar la contraseña.')}catch(e){showToast('No se pudo enviar',firebaseErrorText(e),'bad')}}
-async function logout(){lastFirebaseBackupAt='';lastFirebaseBackupReason='';backupCount=null;lastCloudOkAt='';stopGoogleSheetsMetaListener();if(cloudAuth)await cloudAuth.signOut();currentBusinessId=null;currentUser=null;showOnly('authScreen')}
+async function logout(){googleMetaLoaded=false;backupChecked=false;googleOffToastShown=false;lastFirebaseBackupAt='';lastFirebaseBackupReason='';backupCount=null;lastCloudOkAt='';stopGoogleSheetsMetaListener();if(cloudAuth)await cloudAuth.signOut();currentBusinessId=null;currentUser=null;showOnly('authScreen')}
 
 function protectionOnboardingKey(){return PROTECTION_ONBOARDING_KEY+(currentUser?.id||'guest')}
 function showProtectionOnboarding(){if(!currentUser||localStorage.getItem(protectionOnboardingKey())==='1')return;localStorage.setItem(protectionOnboardingKey(),'1');$('modalTitle').textContent='Protege tu información';$('modalContent').innerHTML=`<div class="onboarding-protection"><div class="onboarding-lock"><svg viewBox="0 0 24 24"><path d="M12 3 5 6v5c0 4.6 2.8 8.2 7 10 4.2-1.8 7-5.4 7-10V6l-7-3Z"/><path d="m9 12 2 2 4-4"/></svg></div><div class="onboarding-lead"><b>Tu primer negocio ya está listo.</b><br>PrestApp protegerá la información automáticamente. Para tener una segunda copia visible fuera de la app, conecta Google Sheets una sola vez.</div><div class="onboarding-step"><div class="step-dot">✓</div><div><b>Guardado automático en Firebase</b><span>Cada cliente, préstamo y pago se guarda en la nube.</span></div></div><div class="onboarding-step"><div class="step-dot">✓</div><div><b>Copia diaria automática</b><span>Se crea al entrar a la app; también hacemos copia antes de eliminaciones.</span></div></div><div class="onboarding-step pending"><div class="step-dot">3</div><div><b>Conecta Google Sheets</b><span>Crea y mantiene el mismo archivo con negocios, clientes, préstamos y movimientos.</span></div></div><div class="onboarding-actions"><button class="secondary" type="button" data-action="onboarding-later">Hacerlo después</button><button class="primary" type="button" data-action="onboarding-google">Conectar Google ahora</button></div></div>`;showModal();if(cloudDb&&currentUser?.id)cloudDb.ref(cloudPath(currentUser.id,'settings/protectionOnboarding')).set({shown:true,shownAt:new Date().toISOString()}).catch(()=>{})}
 function checkProtectionReminder(){if(!currentUser)return;const todayKey='NEXA_PROTECTION_REMINDER_'+currentUser.id+'_'+today();if(localStorage.getItem(todayKey))return;if(googleSheetsMeta.sheetId&&googleSheetsMeta.lastSyncAt){const age=(Date.now()-new Date(googleSheetsMeta.lastSyncAt).getTime())/86400000;if(age>=7){localStorage.setItem(todayKey,'1');setTimeout(()=>showToast('Google necesita una actualización','La última copia de Google Sheets tiene más de 7 días. En Configuración pulsa “Actualizar ahora”.','info'),1200)}}}
+function renderProtectionBanner(){
+  const box=$('protectionBanner');if(!box)return;
+  if(!currentUser||!currentBusinessId){box.classList.add('hidden');return}
+  const pill=$('cloudPill'),cloudBad=cloudLoadFailed||!!pill?.classList.contains('bad'),cloudOk=!!pill?.classList.contains('ok');
+  const btn=(action,label)=>`<button class="mini-btn" type="button" data-action="${action}">${label}</button>`;
+  let msg='',kind='warn',action='';
+  if(cloudBad){kind='bad';msg='<b>Atención:</b> no se está guardando en la nube. Revisa tu conexión a Internet; mientras tanto no cierres la app.';action=btn('go-settings','Ver protección')}
+  else if(googleMetaLoaded&&googleSheetsConfigured()&&!googleSheetsMeta.sheetId){msg='<b>Atención:</b> tu información NO se está guardando en la copia de respaldo de Google. Conecta Google para dejarla protegida.';action=btn('google-sheets-sync','Conectar Google ahora')}
+  else if(googleSheetsMeta.sheetId&&googleReconnectRequired){msg='<b>Atención:</b> Google necesita que vuelvas a dar permiso. Hasta entonces la copia de Google no se actualiza.';action=btn('google-sheets-sync','Reconectar Google')}
+  else if(cloudOk&&backupChecked&&!backupRunning&&!backupIsToday()){msg='<b>Atención:</b> todavía no se creó la copia de seguridad de hoy.';action=btn('cloud-backup','Crear copia ahora')}
+  if(!msg){box.classList.add('hidden');box.innerHTML='';return}
+  box.innerHTML=`<div class="pb ${kind}"><span>${msg}</span>${action}</div>`;box.classList.remove('hidden')
+}
 function renderProtectionOverall(){
   const el=$('protectionOverallBadge'),t=$('protectionHeroTitle'),sub=$('protectionHeroSub');if(!el)return;
   const cloudOk=!!$('cloudPill')?.classList.contains('ok'),backupOk=backupIsToday(),googleOk=!!googleSheetsMeta.sheetId;
@@ -1201,7 +1220,8 @@ function renderProtectionOverall(){
   else{title='Revisa la conexión con la nube';badge='Revisar Firebase';cls='error'}
   el.className='status-badge '+cls;el.textContent=badge;
   if(t)t.textContent=title;
-  if(sub)sub.innerHTML=[(cloudOk?'✓':'•')+' Guardado en la nube',(backupOk?'✓':'•')+' Copia diaria de hoy',googleOk?'✓ Google Sheets vinculado':'• Google Sheets sin conectar (recomendado)'].map(esc).join('&nbsp;&nbsp;·&nbsp;&nbsp;')+'<br>Si algo falla, tu información no se pierde: siempre hay copias para recuperarla.'
+  if(sub)sub.innerHTML=[(cloudOk?'✓':'•')+' Guardado en la nube',(backupOk?'✓':'•')+' Copia diaria de hoy',googleOk?'✓ Google Sheets vinculado':'• Google Sheets sin conectar (recomendado)'].map(esc).join('&nbsp;&nbsp;·&nbsp;&nbsp;')+'<br>Si algo falla, tu información no se pierde: siempre hay copias para recuperarla.';
+  renderProtectionBanner()
 }
 
 let welcomeTimer=null;
@@ -1494,13 +1514,14 @@ function applyGoogleSheetsMeta(remote){
   renderGoogleSheetsState();
 }
 async function loadGoogleSheetsMeta(){
+  googleMetaLoaded=false;
   googleReconnectRequired=false;googleReconnectNoticeShown=false;googleAccountLinkNoticeShown=false;googleConnectionIssue='';
   googleSheetsMeta={sheetId:'',sheetUrl:'',lastSyncAt:'',googleConnected:false,googleEmail:'',connectedAt:'',pendingAt:''};
   stopGoogleSheetsMetaListener();
   if(!cloudDb||!currentUser?.id){renderGoogleSheetsState();return}
   const uid=currentUser.id,ref=cloudDb.ref(cloudPath(uid,'settings/googleSheets'));googleSheetsMetaRef=ref;googleSheetsMetaRefUid=uid;
   try{
-    const snap=await Promise.race([ref.once('value'),new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),6000))]);if(currentUser?.id!==uid)return;applyGoogleSheetsMeta(snap.val()||{});
+    const snap=await Promise.race([ref.once('value'),new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),6000))]);if(currentUser?.id!==uid)return;applyGoogleSheetsMeta(snap.val()||{});googleMetaLoaded=true;renderProtectionBanner();if(!googleSheetsMeta.sheetId&&googleSheetsConfigured()&&!googleOffToastShown){googleOffToastShown=true;setTimeout(()=>showToast('Falta conectar tu copia en Google','Tu información todavía NO se guarda en el respaldo de Google. Entra a Ajustes → Protección de datos y pulsa “Conectar Google”.','bad'),1800)}
     ref.on('value',live=>{if(currentUser?.id!==uid)return;applyGoogleSheetsMeta(live.val()||{})},err=>console.warn('Google Sheets en vivo:',err));
   }catch(e){console.warn('Google Sheets config:',e);renderGoogleSheetsState()}
 }
@@ -1549,10 +1570,10 @@ function renderGoogleSheetsState(){
     if(openBtn)openBtn.classList.remove('hidden');
     if(item){item.classList.add('connected');item.classList.toggle('issue',googleReconnectRequired);item.classList.remove('optional')}
   }else{
-    text.textContent='Conecta una cuenta de Google una sola vez y PrestApp creará “PrestApp - Respaldo” automáticamente.';
+    text.textContent='Sin conectar: tu información todavía NO se está guardando en Google. Conéctalo una sola vez y PrestApp creará “PrestApp - Respaldo” y lo mantendrá actualizado.';
     btn.textContent='Conectar Google';
-    if(badge){badge.className='status-badge';badge.textContent='Sin conectar'}
-    if(item){item.classList.remove('connected','issue','optional')}
+    if(badge){badge.className='status-badge warn';badge.textContent='Sin conectar'}
+    if(item){item.classList.remove('connected','optional');item.classList.add('issue')}
     if(issue){issue.textContent=googleConnectionIssue||'';issue.classList.toggle('hidden',!googleConnectionIssue)}
     if(optional)optional.textContent='La primera conexión crea una sola hoja. Después, cada cambio actualiza ese mismo archivo. El Excel manual permanece abajo como exportación aparte.';
     if(openBtn)openBtn.classList.add('hidden');
@@ -1723,7 +1744,7 @@ function bindEvents(){
     if(blockedWhileSyncing(e))return;
     const action=e.target.closest('[data-action]')?.dataset.action;
     if(action==='toggle-pass'){const btn=e.target.closest('[data-action]'),inp=btn.parentElement.querySelector('input');if(inp){const show=inp.type==='password';inp.type=show?'text':'password';btn.classList.toggle('on',show);btn.setAttribute('aria-label',show?'Ocultar contraseña':'Mostrar contraseña')}return}
-    if(action==='show-register')showRegister();if(action==='show-login')showLogin();if(action==='show-forgot')showForgot();if(action==='login')login();if(action==='register')register();if(action==='reset-password')resetPassword();if(action==='logout')logout();if(action==='create-business')createBusiness();if(action==='business-selector')renderBusinessSelector();if(action==='close-modal')closeModal();if(action==='save-business-name')saveBusinessName();if(action==='save-loan')saveLoan();if(action==='home-search')renderSearchResults('homeSearchResults',$('homeSearch').value.trim());if(action==='client-search')renderClients();if(action==='collection-search')renderCollections();if(action==='rename-business')renameBusiness();if(action==='edit-business-capital')openBusinessCapitalModal();if(action==='save-business-capital')saveBusinessCapital();if(action==='confirm-delete-business')deleteBusiness();if(action==='verify-protection')verifyProtection();if(action==='verify-cloud'){if(cloudLoadFailed)retryCloudLoad();else cloudSaveNow(true)}if(action==='cloud-backup')cloudBackup('respaldo manual');if(action==='download-excel')downloadExcelBackup();if(action==='google-sheets-sync')googleSheetsSync();if(action==='open-google-sheet')openGoogleSheet();if(action==='download-backup')downloadBackup();if(action==='onboarding-later'){closeModal();showToast('Protección básica activa','Firebase y la copia diaria ya están funcionando. Puedes conectar Google más tarde.','info')}if(action==='onboarding-google'){closeModal();googleSheetsSync();}
+    if(action==='show-register')showRegister();if(action==='show-login')showLogin();if(action==='show-forgot')showForgot();if(action==='login')login();if(action==='register')register();if(action==='reset-password')resetPassword();if(action==='logout')logout();if(action==='create-business')createBusiness();if(action==='business-selector')renderBusinessSelector();if(action==='close-modal')closeModal();if(action==='save-business-name')saveBusinessName();if(action==='save-loan')saveLoan();if(action==='home-search')renderSearchResults('homeSearchResults',$('homeSearch').value.trim());if(action==='client-search')renderClients();if(action==='collection-search')renderCollections();if(action==='rename-business')renameBusiness();if(action==='edit-business-capital')openBusinessCapitalModal();if(action==='save-business-capital')saveBusinessCapital();if(action==='confirm-delete-business')deleteBusiness();if(action==='go-settings')setPage('settings');if(action==='verify-protection')verifyProtection();if(action==='verify-cloud'){if(cloudLoadFailed)retryCloudLoad();else cloudSaveNow(true)}if(action==='cloud-backup')cloudBackup('respaldo manual');if(action==='download-excel')downloadExcelBackup();if(action==='google-sheets-sync')googleSheetsSync();if(action==='open-google-sheet')openGoogleSheet();if(action==='download-backup')downloadBackup();if(action==='onboarding-later'){closeModal();showToast('Protección básica activa','Firebase y la copia diaria ya están funcionando. Puedes conectar Google más tarde.','info')}if(action==='onboarding-google'){closeModal();googleSheetsSync();}
     const dbtn=e.target.closest('[data-delete-business]');if(dbtn){openDeleteBusinessConfirm(dbtn.dataset.deleteBusiness);return}
     const ob=e.target.closest('[data-open-business]');if(ob)openBusiness(ob.dataset.openBusiness);
     const nav=e.target.closest('[data-page]');if(nav)setPage(nav.dataset.page);
