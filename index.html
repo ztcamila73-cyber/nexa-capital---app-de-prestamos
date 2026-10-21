@@ -1119,7 +1119,7 @@ async function readRemoteState(uid){
     const startRest=()=>{if(restStarted||settled)return;restStarted=true;rest().then(win,lose)};
     sdk.then(win,e=>{lose(e);startRest()});
     startRest(); /* HTTPS directo desde el segundo 0: no depende del WebSocket, que en algunas redes tarda ~1 minuto en rendirse */
-    setTimeout(()=>{if(!settled){settled=true;reject(Object.assign(new Error('timeout'),{code:'timeout'}))}},90000);
+    setTimeout(()=>{if(!settled){settled=true;reject(Object.assign(new Error('Firebase tardó demasiado en responder'),{code:'timeout'}))}},15000);
   })
 }
 async function retryCloudLoad(){
@@ -1129,8 +1129,8 @@ async function retryCloudLoad(){
   return false
 }
 let cloudLoadFailed=false;
-/* Reintento automático adicional de carga al iniciar sesión: evita depender del botón manual
-   cuando Firebase responde tarde. Máximo un reintento extra por fallo inicial y usuario. */
+/* Reintentos automáticos de carga: evita depender de una acción manual cuando Firebase responde tarde.
+   Cada lectura tiene límite de 15 s y se permiten hasta 3 ciclos adicionales por usuario. */
 let cloudAutoRetryCount=0,cloudAutoRetryTimer=null,cloudAutoRetryUid='';
 function afterBackgroundCloudLoad(){
   if(!currentUser)return;
@@ -1188,7 +1188,7 @@ async function loadCloudState(uid){
     /* No reintentar errores de permisos: necesitan corregir reglas/configuración. En fallos
        transitorios hacemos un reintento automático extra y mantenemos bloqueados los guardados. */
     const permissionDenied=e?.code==='PERMISSION_DENIED'||e?.code==='permission_denied';
-    if(!permissionDenied&&cloudAutoRetryCount<1&&currentUser?.id===uid){
+    if(!permissionDenied&&cloudAutoRetryCount<3&&currentUser?.id===uid){
       cloudAutoRetryCount++;cloudAutoRetryUid=uid;
       if(cloudAutoRetryTimer)clearTimeout(cloudAutoRetryTimer);
       setCloud('work','Reintentando conexión…');
