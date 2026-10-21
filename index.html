@@ -440,6 +440,7 @@ details[open]>summary{border-bottom:1px solid var(--line-2)}
 .protection-shield{width:48px;height:48px;flex:0 0 48px;border-radius:16px;background:rgba(255,255,255,.13);color:var(--gold-2);display:grid;place-items:center;box-shadow:inset 0 1px 0 rgba(255,255,255,.15)}
 .protection-shield svg,.protection-icon svg,.onboarding-lock svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .protection-hero-title{font-weight:800;font-size:16px;letter-spacing:-.03em}
+.protection-verify{margin-top:14px}.protection-verify-result{margin-top:10px;font-size:13px;line-height:1.7;color:var(--ink-2);font-weight:700}.protection-verify-result:empty{display:none}
 .protection-hero-sub{font-size:12.5px;color:#C7D3E3;margin-top:4px;line-height:1.5}
 .protection-list{display:grid;gap:10px}
 .protection-item{display:grid;grid-template-columns:44px minmax(0,1fr);gap:4px 14px;align-items:start;padding:14px;border:1px solid var(--line);border-radius:20px;background:#fff}
@@ -746,7 +747,7 @@ document.addEventListener('error',function(e){var t=e.target;if(!t||t.tagName!==
         <div class="card flat protection-card">
           <div class="section-head"><h2>Protección de datos</h2></div>
           <div class="protection-hero">
-            <div class="protection-hero-main"><div class="protection-shield"><svg viewBox="0 0 24 24"><path d="M12 3 5 6v5c0 4.6 2.8 8.2 7 10 4.2-1.8 7-5.4 7-10V6l-7-3Z"/><path d="m9 12 2 2 4-4"/></svg></div><div><div class="protection-hero-title">Protección automática</div><div class="protection-hero-sub">PrestApp guarda cada cambio en Firebase, crea una copia diaria y puede mantener un Google Sheet separado actualizado automáticamente.</div></div></div>
+            <div class="protection-hero-main"><div class="protection-shield"><svg viewBox="0 0 24 24"><path d="M12 3 5 6v5c0 4.6 2.8 8.2 7 10 4.2-1.8 7-5.4 7-10V6l-7-3Z"/><path d="m9 12 2 2 4-4"/></svg></div><div><div id="protectionHeroTitle" class="protection-hero-title">Revisando tu protección…</div><div id="protectionHeroSub" class="protection-hero-sub">PrestApp guarda cada cambio en la nube, crea una copia diaria y puede mantener un Google Sheet separado actualizado.</div></div></div>
             <span id="protectionOverallBadge" class="status-badge">Revisando</span>
           </div>
           <div class="protection-list">
@@ -754,6 +755,7 @@ document.addEventListener('error',function(e){var t=e.target;if(!t||t.tagName!==
             <div class="protection-item"><div class="protection-icon"><svg viewBox="0 0 24 24"><path d="M12 3v12"/><path d="m8 11 4 4 4-4"/><path d="M5 18h14v3H5z"/></svg></div><div><div class="protection-title">Copia diaria automática</div><div id="firebaseBackupStateText" class="protection-sub">Se crea automáticamente al entrar a la app.</div></div><div class="protection-actions"><span id="firebaseBackupBadge" class="status-badge success">Automática</span><button class="mini-btn" type="button" data-action="cloud-backup">Crear ahora</button></div></div>
             <div id="googleProtectionItem" class="protection-item google-protection"><div class="protection-icon"><svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h8M11 6v12M15 6v12"/></svg></div><div><div class="protection-title">Google Sheets · segunda copia en vivo</div><div id="googleSheetsStateText" class="protection-sub">Conecta tu cuenta una sola vez. PrestApp guardará el mismo archivo “PrestApp - Respaldo” y lo actualizará; no crea una hoja nueva en cada copia.</div><div id="googleSheetsIssue" class="google-issue hidden"></div><div id="googleSheetsOptional" class="google-optional">La vinculación queda guardada. Si Google vence o revoca la autorización, PrestApp te avisará sin afectar el guardado principal en Firebase.</div></div><div class="protection-actions"><span id="googleSheetsBadge" class="status-badge">Sin conectar</span><button id="googleSheetsButton" class="mini-btn" type="button" data-action="google-sheets-sync">Conectar Google</button><button id="googleSheetsOpenButton" class="mini-btn hidden" type="button" data-action="open-google-sheet">Abrir hoja</button></div></div>
           </div>
+          <div class="protection-verify"><button class="primary full" type="button" data-action="verify-protection">Verificar mi protección ahora</button><div id="protectionVerifyResult" class="protection-verify-result" aria-live="polite"></div></div>
           <details class="manual-backups"><summary>Copias manuales y exportaciones</summary><div class="manual-backup-body">
             <div class="manual-row"><div><b>Excel completo</b><span>Negocios, clientes, préstamos, cuotas y movimientos.</span></div><button class="mini-btn" type="button" data-action="download-excel">Descargar</button></div>
             <div class="manual-row"><div><b>Respaldo técnico JSON</b><span>Copia completa para recuperación técnica.</span></div><button class="mini-btn" type="button" data-action="download-backup">Descargar</button></div>
@@ -830,7 +832,23 @@ let googleReconnectNoticeShown=false;
 let googleSheetsMetaRef=null;
 let googleSheetsMetaRefUid='';
 let googleAccountLinkNoticeShown=false;
-let lastFirebaseBackupAt='',lastFirebaseBackupReason='';
+let lastFirebaseBackupAt='',lastFirebaseBackupReason='',backupRunning=false,backupCount=null,lastCloudOkAt='',verifyingProtection=false;
+/* Acceso directo a Firebase por HTTPS (no depende del WebSocket del SDK) */
+async function restDb(method,path,body,query=''){
+  const user=cloudAuth?.currentUser;if(!user||typeof user.getIdToken!=='function')throw new Error('no-rest');
+  const token=await user.getIdToken(),base=String(NEXA_FIREBASE_CONFIG.databaseURL).replace(/\/+$/,'');
+  const res=await fetch(`${base}/${path}.json?auth=${encodeURIComponent(token)}${query}`,{method,headers:{'Content-Type':'application/json'},body:body===undefined?undefined:JSON.stringify(body)});
+  if(!res.ok)throw Object.assign(new Error('Firebase respondió '+res.status),{code:res.status===401||res.status===403?'PERMISSION_DENIED':'database/error'});
+  return await res.json()
+}
+/* Guarda una copia por las dos vías a la vez; basta con que una confirme */
+async function pushBackup(reason,data){
+  const createdAt=new Date().toISOString(),ref=cloudDb.ref(cloudPath(currentUser.id,'backups')).push(),key=ref.key,payload={reason,createdAt,data};
+  const attempts=[(async()=>ref.set(payload))(),restDb('PUT',cloudPath(currentUser.id,'backups/'+key),payload)];
+  await new Promise((ok,bad)=>{let fails=0;attempts.forEach(p=>p.then(ok,e=>{if(++fails>=attempts.length)bad(e)}))});
+  lastFirebaseBackupAt=createdAt;lastFirebaseBackupReason=reason;if(backupCount!=null)backupCount++;
+  return createdAt
+}
 
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
@@ -930,7 +948,7 @@ function firebaseConfigured(){
   return !!(c && typeof c==='object' && ['apiKey','authDomain','databaseURL','projectId','appId'].every(k=>typeof c[k]==='string'&&c[k].trim()) && !c.apiKey.includes('PEGA_AQUI') && !c.projectId.includes('TU-PROYECTO'));
 }
 function cloudPath(uid,suffix=''){return `users/${uid}/${APP_PATH}${suffix?'/'+suffix:''}`}
-function setCloud(kind,text){const pill=$('cloudPill'),s=$('firebaseStateText'),badge=$('firebaseProtectionBadge');if(pill){pill.className='cloud-pill '+(kind||'');pill.textContent=text}if(s)s.textContent=kind==='ok'?'Activa · cada cambio se guarda automáticamente':kind==='work'?'Guardando cambios en la nube…':kind==='bad'?'No se pudo confirmar el guardado en la nube':text;if(badge){badge.className='status-badge '+(kind==='ok'?'success':kind==='bad'?'error':'warn');badge.textContent=kind==='ok'?'Activa':kind==='bad'?'Revisar':'Guardando'}renderProtectionOverall()}
+function setCloud(kind,text){const pill=$('cloudPill'),s=$('firebaseStateText'),badge=$('firebaseProtectionBadge');if(pill){pill.className='cloud-pill '+(kind||'');pill.textContent=text}if(s)s.textContent=kind==='ok'?'Activa · cada cambio se guarda automáticamente'+(lastCloudOkAt?' · confirmado '+new Date(lastCloudOkAt).toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'}):''):kind==='work'?'Guardando cambios en la nube…':kind==='bad'?'No se pudo confirmar el guardado en la nube':text;if(badge){badge.className='status-badge '+(kind==='ok'?'success':kind==='bad'?'error':'warn');badge.textContent=kind==='ok'?'Activa':kind==='bad'?'Revisar':'Guardando'}renderProtectionOverall()}
 function validEmail(email){return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i.test(String(email||'').trim())}
 function firebaseErrorText(e){const code=String(e?.code||'');if(code.includes('invalid-email'))return 'El correo no tiene un formato válido.';if(code.includes('invalid-credential')||code.includes('wrong-password')||code.includes('user-not-found'))return 'Correo o contraseña incorrectos.';if(code.includes('email-already-in-use'))return 'Ese correo ya tiene una cuenta.';if(code.includes('weak-password'))return 'La contraseña debe tener al menos 6 caracteres.';if(code.includes('network'))return 'No hay conexión estable a Internet.';if(code.includes('too-many-requests'))return 'Hubo demasiados intentos. Espera un momento y vuelve a intentar.';if(code.includes('operation-not-allowed')||code.includes('OPERATION_NOT_ALLOWED'))return 'El inicio con correo y contraseña no está activado en Firebase (Authentication > Sign-in method > Email/Password).';if(code.includes('unauthorized-domain'))return 'Este dominio no está autorizado en Firebase (Authentication > Settings > Authorized domains).';if(code.includes('operation-not-supported'))return 'Este navegador o forma de abrir el archivo no permite iniciar sesión. Abre la app desde una dirección https:// o http://.';if(code.includes('user-disabled'))return 'Esta cuenta está deshabilitada.';if(code.includes('api-key')||code.includes('API_KEY')||code.includes('requests-from-referer')||code.includes('REFERER'))return 'La API key de Firebase está bloqueada o restringida para este dominio (Google Cloud > Credenciales).';if(code==='PERMISSION_DENIED')return 'Las reglas de Realtime Database no permiten leer/escribir. Revisa las reglas en Firebase.';return 'No se pudo completar la operación'+(code?' ('+code+')':'')+'. Intenta nuevamente.'}
 async function loadFirebaseScript(src){
@@ -1100,14 +1118,37 @@ function blockedWhileSyncing(e){
   if(!risky)return false;
   showToast('Sincronizando…','Espera un par de segundos a que cargue la nube y vuelve a pulsar.','info');return true
 }
-async function loadCloudState(uid){if(!cloudDb)return;cloudLoading=true;cloudLoadFailed=false;setCloud('work','Cargando…');try{const _t0=performance.now();const remote=await readRemoteState(uid);console.info('PrestApp: datos de la nube leídos en '+Math.round(performance.now()-_t0)+' ms');if(remote?.data){applyState(remote.data)}else if((db.businesses?.length||0)+(db.clients?.length||0)+(db.loans?.length||0)>0){await cloudDb.ref(cloudPath(uid,'state')).set({data:appState(),updatedAt:new Date().toISOString()})}else{applyState({})}localStorage.setItem(CLOUD_OWNER_KEY,uid);localStorage.setItem(CLOUD_DIRTY_KEY,'0');setCloud('ok','Nube al día');loadGoogleSheetsMeta().catch(()=>{});/* La copia diaria y su estado se hacen en segundo plano para no retrasar el inicio de sesión */Promise.resolve().then(async()=>{try{await maybeDailyBackup(appState(),'respaldo automático al iniciar');await loadBackupStatus()}catch(err){console.warn('Respaldo al iniciar:',err)}});checkProtectionReminder()}catch(e){console.error(e);cloudLoadFailed=true;setCloud('bad','Error al cargar nube');showToast('No se pudo cargar tus datos','Para no pisar tu información guardada, no se guardarán cambios hasta que cargue bien. Revisa Internet y recarga la página. '+firebaseErrorText(e),'bad')}finally{cloudLoading=false}}
+async function loadCloudState(uid){if(!cloudDb)return;cloudLoading=true;cloudLoadFailed=false;setCloud('work','Cargando…');try{const _t0=performance.now();const remote=await readRemoteState(uid);console.info('PrestApp: datos de la nube leídos en '+Math.round(performance.now()-_t0)+' ms');if(remote?.data){applyState(remote.data)}else if((db.businesses?.length||0)+(db.clients?.length||0)+(db.loans?.length||0)>0){await cloudDb.ref(cloudPath(uid,'state')).set({data:appState(),updatedAt:new Date().toISOString()})}else{applyState({})}localStorage.setItem(CLOUD_OWNER_KEY,uid);localStorage.setItem(CLOUD_DIRTY_KEY,'0');(lastCloudOkAt=new Date().toISOString(),setCloud('ok','Nube al día'));loadGoogleSheetsMeta().catch(()=>{});/* La copia diaria y su estado se hacen en segundo plano para no retrasar el inicio de sesión */Promise.resolve().then(async()=>{backupRunning=true;renderBackupStatus();try{await loadBackupStatus();if(!backupIsToday()){await pushBackup('respaldo diario automático',JSON.parse(JSON.stringify(appState())));localStorage.setItem(LAST_BACKUP_KEY+'_'+uid,today())}}catch(err){console.warn('Respaldo al iniciar:',err)}finally{backupRunning=false;renderBackupStatus();refreshBackupCount()}});checkProtectionReminder()}catch(e){console.error(e);cloudLoadFailed=true;setCloud('bad','Error al cargar nube');showToast('No se pudo cargar tus datos','Para no pisar tu información guardada, no se guardarán cambios hasta que cargue bien. Revisa Internet y recarga la página. '+firebaseErrorText(e),'bad')}finally{cloudLoading=false}}
 function saveLocal(){localStorage.setItem(APP_KEY,JSON.stringify(db));localStorage.setItem(CLOUD_DIRTY_KEY,'1');localStorage.setItem(CLOUD_UPDATED_KEY,new Date().toISOString());queueCloudSave();queueGoogleSheetsSync()}
 function queueCloudSave(){if(!cloudDb||!currentUser?.id||cloudLoading||cloudLoadFailed)return;cloudDirty=true;clearTimeout(cloudSaveTimer);cloudSaveTimer=setTimeout(()=>cloudSaveNow(false),180)}
-async function cloudSaveNow(notify=true){if(!cloudDb||!currentUser?.id||cloudLoadFailed)return false;if(cloudSaveInFlight){cloudDirty=true;return false}cloudSaveInFlight=true;try{do{cloudDirty=false;setCloud('work','Guardando…');const snapshot=appState(),updatedAt=new Date().toISOString();const ref=cloudDb.ref(cloudPath(currentUser.id,'state'));await ref.set({data:snapshot,updatedAt});const check=(await ref.once('value')).val();if(!check||check.updatedAt!==updatedAt)throw new Error('Firebase no confirmó la escritura.');localStorage.setItem(CLOUD_DIRTY_KEY,'0');setCloud('ok','Nube al día');await maybeDailyBackup(snapshot,'respaldo diario automático')}while(cloudDirty);if(notify)showToast('Nube verificada','Los datos fueron escritos y leídos nuevamente desde Firebase.');return true}catch(e){console.error(e);setCloud('bad','Sin sincronizar');if(notify)showToast('No se pudo verificar la nube',firebaseErrorText(e),'bad');return false}finally{cloudSaveInFlight=false}}
-async function cloudBackup(reason='manual',notify=true){if(!cloudDb||!currentUser?.id)return false;try{const createdAt=new Date().toISOString(),ref=cloudDb.ref(cloudPath(currentUser.id,'backups')).push();await ref.set({reason,createdAt,data:appState()});lastFirebaseBackupAt=createdAt;lastFirebaseBackupReason=reason;renderBackupStatus();if(notify)showToast('Copia de seguridad creada','La copia quedó guardada en Firebase.');return true}catch(e){if(notify)showToast('No se pudo crear la copia',firebaseErrorText(e),'bad');return false}}
-async function maybeDailyBackup(snapshot,reason='respaldo diario automático'){if(!currentUser?.id||!cloudDb)return false;const key=LAST_BACKUP_KEY+'_'+currentUser.id;if(localStorage.getItem(key)===today())return false;try{const createdAt=new Date().toISOString(),ref=cloudDb.ref(cloudPath(currentUser.id,'backups')).push();await ref.set({reason,createdAt,data:snapshot});localStorage.setItem(key,today());lastFirebaseBackupAt=createdAt;lastFirebaseBackupReason=reason;renderBackupStatus();return true}catch(e){console.warn('Respaldo automático:',e);return false}}
-async function loadBackupStatus(){lastFirebaseBackupAt='';lastFirebaseBackupReason='';if(!cloudDb||!currentUser?.id){renderBackupStatus();return}try{const snap=await cloudDb.ref(cloudPath(currentUser.id,'backups')).limitToLast(1).once('value'),val=snap.val()||{},last=Object.values(val)[0];if(last){lastFirebaseBackupAt=last.createdAt||'';lastFirebaseBackupReason=last.reason||''}}catch(e){console.warn('Estado de respaldos:',e)}renderBackupStatus()}
-function renderBackupStatus(){const text=$('firebaseBackupStateText'),badge=$('firebaseBackupBadge');if(!text||!badge)return;if(lastFirebaseBackupAt){text.textContent=`Última copia: ${new Date(lastFirebaseBackupAt).toLocaleString('es-CO')}${lastFirebaseBackupReason?' · '+lastFirebaseBackupReason:''}`;badge.className='status-badge success';badge.textContent='Al día'}else{text.textContent='Se crea automáticamente al entrar a la app y antes de acciones críticas.';badge.className='status-badge warn';badge.textContent='Pendiente'}renderProtectionOverall()}
+async function cloudSaveNow(notify=true){if(!cloudDb||!currentUser?.id||cloudLoadFailed)return false;if(cloudSaveInFlight){cloudDirty=true;return false}cloudSaveInFlight=true;try{do{cloudDirty=false;setCloud('work','Guardando…');const snapshot=appState(),updatedAt=new Date().toISOString();const ref=cloudDb.ref(cloudPath(currentUser.id,'state'));await ref.set({data:snapshot,updatedAt});const check=(await ref.once('value')).val();if(!check||check.updatedAt!==updatedAt)throw new Error('Firebase no confirmó la escritura.');localStorage.setItem(CLOUD_DIRTY_KEY,'0');(lastCloudOkAt=new Date().toISOString(),setCloud('ok','Nube al día'));await maybeDailyBackup(snapshot,'respaldo diario automático')}while(cloudDirty);if(notify)showToast('Nube verificada','Los datos fueron escritos y leídos nuevamente desde Firebase.');return true}catch(e){console.error(e);setCloud('bad','Sin sincronizar');if(notify)showToast('No se pudo verificar la nube',firebaseErrorText(e),'bad');return false}finally{cloudSaveInFlight=false}}
+async function cloudBackup(reason='manual',notify=true){if(!cloudDb||!currentUser?.id)return false;try{await pushBackup(reason,JSON.parse(JSON.stringify(appState())));renderBackupStatus();refreshBackupCount();if(notify)showToast('Copia de seguridad creada','La copia quedó guardada en Firebase.');return true}catch(e){if(notify)showToast('No se pudo crear la copia',firebaseErrorText(e),'bad');return false}}
+async function maybeDailyBackup(snapshot,reason='respaldo diario automático'){if(!currentUser?.id||!cloudDb||backupRunning)return false;const key=LAST_BACKUP_KEY+'_'+currentUser.id;if(localStorage.getItem(key)===today()&&backupIsToday())return false;try{await pushBackup(reason,JSON.parse(JSON.stringify(snapshot)));localStorage.setItem(key,today());renderBackupStatus();refreshBackupCount();return true}catch(e){console.warn('Respaldo automático:',e);return false}}
+async function loadBackupStatus(){
+  if(!cloudDb||!currentUser?.id){renderBackupStatus();return}
+  const uid=currentUser.id;
+  try{
+    let val;
+    try{val=await restDb('GET',cloudPath(uid,'backups'),undefined,'&orderBy='+encodeURIComponent('"$key"')+'&limitToLast=1')}
+    catch(e){const snap=await cloudDb.ref(cloudPath(uid,'backups')).limitToLast(1).once('value');val=snap.val()}
+    const last=Object.values(val||{})[0];
+    if(last&&(!lastFirebaseBackupAt||String(last.createdAt||'')>lastFirebaseBackupAt)){lastFirebaseBackupAt=last.createdAt||'';lastFirebaseBackupReason=last.reason||''}
+  }catch(e){console.warn('Estado de respaldos:',e)}
+  renderBackupStatus();
+}
+function backupIsToday(){return !!lastFirebaseBackupAt&&new Date(lastFirebaseBackupAt).toDateString()===new Date().toDateString()}
+async function refreshBackupCount(){try{const v=await restDb('GET',cloudPath(currentUser.id,'backups'),undefined,'&shallow=true');backupCount=v?Object.keys(v).length:0;renderBackupStatus()}catch(e){/* el conteo es opcional */}}
+function renderBackupStatus(){
+  const text=$('firebaseBackupStateText'),badge=$('firebaseBackupBadge');if(!text||!badge)return;
+  const count=backupCount!=null?` · ${backupCount} copia(s) guardada(s)`:'';
+  if(backupRunning){text.textContent='Creando la copia de hoy…';badge.className='status-badge warn';badge.textContent='Creando…'}
+  else if(lastFirebaseBackupAt){
+    const when=new Date(lastFirebaseBackupAt).toLocaleString('es-CO'),today_=backupIsToday();
+    text.textContent=`Última copia: ${when}${count}${lastFirebaseBackupReason?' · '+lastFirebaseBackupReason:''}`;
+    badge.className='status-badge '+(today_?'success':'warn');badge.textContent=today_?'Al día':'Desactualizada'
+  }else{text.textContent='Todavía no se confirma ninguna copia. Se crea sola al entrar; también puedes pulsar “Crear ahora”.';badge.className='status-badge warn';badge.textContent='Pendiente'}
+  renderProtectionOverall()
+}
 
 function showOnly(idToShow){['authScreen','welcomeScreen','businessScreen','mainScreen'].forEach(x=>{const el=$(x);if(el)el.classList.toggle('hidden',x!==idToShow)});if(idToShow==='authScreen'){setLoginBusy(false);const p=$('loginPass');if(p&&currentUser===null)p.value=''}window.scrollTo(0,0)}
 function avatarHue(n){let h=0;for(const ch of String(n||''))h=(h*31+ch.charCodeAt(0))%360;return h}
@@ -1146,12 +1187,22 @@ async function login(){
 }
 async function register(){if(!cloudAuth){const ready=await initFirebase();if(!ready||!cloudAuth)return showToast('Firebase no está disponible',firebaseInitError||'No se pudo iniciar Firebase. Revisa la conexión y vuelve a intentarlo.','bad')}const name=$('regName').value.trim(),email=$('regEmail').value.trim().toLowerCase(),pass=$('regPass').value;if(!name)return showToast('Escribe tu nombre','','bad');if(!validEmail(email))return showToast('Revisa el correo','Usa un correo válido, por ejemplo nombre@correo.com.','bad');if(pass.length<6)return showToast('Contraseña muy corta','Usa mínimo 6 caracteres.','bad');try{const cred=await cloudAuth.createUserWithEmailAndPassword(email,pass);await cred.user.updateProfile({displayName:name});if(currentUser&&currentUser.id===cred.user.uid){currentUser.name=name}else{currentUser={id:cred.user.uid,email,name};await loadCloudState(cred.user.uid);openAfterLogin()}}catch(e){showToast('No se pudo crear la cuenta',firebaseErrorText(e),'bad')}}
 async function resetPassword(){if(!cloudAuth){const ready=await initFirebase();if(!ready||!cloudAuth)return showToast('Firebase no está disponible',firebaseInitError||'No se pudo iniciar Firebase. Revisa la conexión y vuelve a intentarlo.','bad')}const email=$('forgotEmail').value.trim().toLowerCase();if(!email)return showToast('Escribe tu correo','','bad');if(!validEmail(email))return showToast('Revisa el correo','Ejemplo: nombre@correo.com','bad');try{await cloudAuth.sendPasswordResetEmail(email);showLogin();showToast('Revisa tu correo','Se envió el enlace para cambiar la contraseña.')}catch(e){showToast('No se pudo enviar',firebaseErrorText(e),'bad')}}
-async function logout(){stopGoogleSheetsMetaListener();if(cloudAuth)await cloudAuth.signOut();currentBusinessId=null;currentUser=null;showOnly('authScreen')}
+async function logout(){lastFirebaseBackupAt='';lastFirebaseBackupReason='';backupCount=null;lastCloudOkAt='';stopGoogleSheetsMetaListener();if(cloudAuth)await cloudAuth.signOut();currentBusinessId=null;currentUser=null;showOnly('authScreen')}
 
 function protectionOnboardingKey(){return PROTECTION_ONBOARDING_KEY+(currentUser?.id||'guest')}
 function showProtectionOnboarding(){if(!currentUser||localStorage.getItem(protectionOnboardingKey())==='1')return;localStorage.setItem(protectionOnboardingKey(),'1');$('modalTitle').textContent='Protege tu información';$('modalContent').innerHTML=`<div class="onboarding-protection"><div class="onboarding-lock"><svg viewBox="0 0 24 24"><path d="M12 3 5 6v5c0 4.6 2.8 8.2 7 10 4.2-1.8 7-5.4 7-10V6l-7-3Z"/><path d="m9 12 2 2 4-4"/></svg></div><div class="onboarding-lead"><b>Tu primer negocio ya está listo.</b><br>PrestApp protegerá la información automáticamente. Para tener una segunda copia visible fuera de la app, conecta Google Sheets una sola vez.</div><div class="onboarding-step"><div class="step-dot">✓</div><div><b>Guardado automático en Firebase</b><span>Cada cliente, préstamo y pago se guarda en la nube.</span></div></div><div class="onboarding-step"><div class="step-dot">✓</div><div><b>Copia diaria automática</b><span>Se crea al entrar a la app; también hacemos copia antes de eliminaciones.</span></div></div><div class="onboarding-step pending"><div class="step-dot">3</div><div><b>Conecta Google Sheets</b><span>Crea y mantiene el mismo archivo con negocios, clientes, préstamos y movimientos.</span></div></div><div class="onboarding-actions"><button class="secondary" type="button" data-action="onboarding-later">Hacerlo después</button><button class="primary" type="button" data-action="onboarding-google">Conectar Google ahora</button></div></div>`;showModal();if(cloudDb&&currentUser?.id)cloudDb.ref(cloudPath(currentUser.id,'settings/protectionOnboarding')).set({shown:true,shownAt:new Date().toISOString()}).catch(()=>{})}
 function checkProtectionReminder(){if(!currentUser)return;const todayKey='NEXA_PROTECTION_REMINDER_'+currentUser.id+'_'+today();if(localStorage.getItem(todayKey))return;if(googleSheetsMeta.sheetId&&googleSheetsMeta.lastSyncAt){const age=(Date.now()-new Date(googleSheetsMeta.lastSyncAt).getTime())/86400000;if(age>=7){localStorage.setItem(todayKey,'1');setTimeout(()=>showToast('Google necesita una actualización','La última copia de Google Sheets tiene más de 7 días. En Configuración pulsa “Actualizar ahora”.','info'),1200)}}}
-function renderProtectionOverall(){const el=$('protectionOverallBadge');if(!el)return;const firebaseOk=$('cloudPill')?.classList.contains('ok'),googleOk=!!googleSheetsMeta.sheetId;if(firebaseOk&&googleOk){el.className='status-badge success';el.textContent='Protección reforzada'}else if(firebaseOk){el.className='status-badge success';el.textContent='Protección activa'}else{el.className='status-badge error';el.textContent='Revisar Firebase'}}
+function renderProtectionOverall(){
+  const el=$('protectionOverallBadge'),t=$('protectionHeroTitle'),sub=$('protectionHeroSub');if(!el)return;
+  const cloudOk=!!$('cloudPill')?.classList.contains('ok'),backupOk=backupIsToday(),googleOk=!!googleSheetsMeta.sheetId;
+  let title,badge,cls;
+  if(cloudOk&&backupOk){title='Tus datos están seguros y respaldados';badge=googleOk?'Protección reforzada':'Protegido';cls='success'}
+  else if(cloudOk){title='Tus datos están guardados · falta la copia de hoy';badge='Revisando copia';cls='success'}
+  else{title='Revisa la conexión con la nube';badge='Revisar Firebase';cls='error'}
+  el.className='status-badge '+cls;el.textContent=badge;
+  if(t)t.textContent=title;
+  if(sub)sub.innerHTML=[(cloudOk?'✓':'•')+' Guardado en la nube',(backupOk?'✓':'•')+' Copia diaria de hoy',googleOk?'✓ Google Sheets vinculado':'• Google Sheets sin conectar (recomendado)'].map(esc).join('&nbsp;&nbsp;·&nbsp;&nbsp;')+'<br>Si algo falla, tu información no se pierde: siempre hay copias para recuperarla.'
+}
 
 let welcomeTimer=null;
 function openAfterLogin(){if(!currentUser)return;clearTimeout(welcomeTimer);currentBusinessId=null;showOnly('welcomeScreen');const name=(currentUser.name||currentUser.email||'').trim();const nameEl=$('welcomeUserName');if(nameEl)nameEl.textContent=name?`Hola, ${name.split('@')[0]}`:'Tus negocios están listos';const authLogo=document.querySelector('.brand-logo');const welcomeLogo=$('welcomeLogo');if(authLogo&&welcomeLogo)welcomeLogo.src=authLogo.src;welcomeTimer=setTimeout(()=>{if(currentUser)renderBusinessSelector()},250)}
@@ -1177,9 +1228,7 @@ function snapshotBeforeDelete(){try{return JSON.parse(JSON.stringify(appState())
 /* Copia de seguridad (con la información ANTES de borrar) en segundo plano, sin bloquear la eliminación */
 function backupSnapshotInBackground(reason,snapshot){
   if(!cloudDb||!currentUser?.id||!snapshot)return;
-  try{const createdAt=new Date().toISOString(),ref=cloudDb.ref(cloudPath(currentUser.id,'backups')).push();
-    Promise.resolve(ref.set({reason,createdAt,data:snapshot})).then(()=>{lastFirebaseBackupAt=createdAt;lastFirebaseBackupReason=reason;renderBackupStatus()}).catch(e=>console.warn('Copia previa a eliminar:',e))
-  }catch(e){console.warn('Copia previa a eliminar:',e)}
+  pushBackup(reason,snapshot).then(()=>{renderBackupStatus()}).catch(e=>console.warn('Copia previa a eliminar:',e))
 }
 /* Tras eliminar: actualiza Firebase y la hoja de Google (segunda copia) de inmediato */
 async function propagateDeletion(){
@@ -1633,6 +1682,26 @@ async function renewGoogleSilently(){
     else{googleReconnectRequired=true;notifyGoogleReconnectNeeded()}
   }finally{googleRenewBusy=false;renderGoogleSheetsState()}
 }
+async function verifyProtection(){
+  if(verifyingProtection||!currentUser)return;verifyingProtection=true;
+  const out=$('protectionVerifyResult'),btn=document.querySelector('[data-action="verify-protection"]');
+  if(btn){btn.disabled=true;btn.textContent='Verificando…'}if(out)out.textContent='Comprobando nube, copia diaria y Google…';
+  const lines=[];
+  try{
+    const cloud=cloudLoadFailed?await retryCloudLoad():await cloudSaveNow(false);
+    lines.push(cloud?'✓ Nube: tus datos se escribieron y se volvieron a leer correctamente.':'✗ Nube: no se pudo confirmar. Revisa tu Internet y vuelve a intentar.');
+    await loadBackupStatus();
+    if(cloud&&!backupIsToday()){try{await pushBackup('verificación manual',JSON.parse(JSON.stringify(appState())));renderBackupStatus()}catch(e){console.warn(e)}}
+    lines.push(backupIsToday()?'✓ Copia diaria: hecha hoy ('+new Date(lastFirebaseBackupAt).toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'})+').':'✗ Copia diaria: no se pudo crear hoy. Pulsa “Crear ahora”.');
+    if(googleSheetsMeta.sheetId){
+      if(googleAccessToken){const ok=await syncGoogleSheetsNow(false);lines.push(ok?'✓ Google Sheets: actualizado con tus datos actuales.':'✗ Google Sheets: no se pudo actualizar; se reintentará.')}
+      else lines.push('• Google Sheets: vinculado; se actualiza solo en tu próximo toque.')
+    }else lines.push('• Google Sheets: sin conectar (opcional, pero recomendado como segunda copia).');
+  }catch(e){console.error(e);lines.push('✗ No se pudo completar la verificación: '+firebaseErrorText(e))}
+  finally{verifyingProtection=false;if(btn){btn.disabled=false;btn.textContent='Verificar mi protección ahora'}}
+  if(out)out.innerHTML=lines.map(esc).join('<br>')+'<br><span class="muted small">Verificado: '+esc(new Date().toLocaleString('es-CO'))+'</span>';
+  renderProtectionOverall()
+}
 function openGoogleSheet(){if(!googleSheetsMeta.sheetUrl)return showToast('Todavía no hay hoja de respaldo','Conecta Google primero.','bad');window.open(googleSheetsMeta.sheetUrl,'_blank','noopener')}
 function queueGoogleSheetsSync(){
   if(!googleSheetsMeta.sheetId)return;
@@ -1654,7 +1723,7 @@ function bindEvents(){
     if(blockedWhileSyncing(e))return;
     const action=e.target.closest('[data-action]')?.dataset.action;
     if(action==='toggle-pass'){const btn=e.target.closest('[data-action]'),inp=btn.parentElement.querySelector('input');if(inp){const show=inp.type==='password';inp.type=show?'text':'password';btn.classList.toggle('on',show);btn.setAttribute('aria-label',show?'Ocultar contraseña':'Mostrar contraseña')}return}
-    if(action==='show-register')showRegister();if(action==='show-login')showLogin();if(action==='show-forgot')showForgot();if(action==='login')login();if(action==='register')register();if(action==='reset-password')resetPassword();if(action==='logout')logout();if(action==='create-business')createBusiness();if(action==='business-selector')renderBusinessSelector();if(action==='close-modal')closeModal();if(action==='save-business-name')saveBusinessName();if(action==='save-loan')saveLoan();if(action==='home-search')renderSearchResults('homeSearchResults',$('homeSearch').value.trim());if(action==='client-search')renderClients();if(action==='collection-search')renderCollections();if(action==='rename-business')renameBusiness();if(action==='edit-business-capital')openBusinessCapitalModal();if(action==='save-business-capital')saveBusinessCapital();if(action==='confirm-delete-business')deleteBusiness();if(action==='verify-cloud'){if(cloudLoadFailed)retryCloudLoad();else cloudSaveNow(true)}if(action==='cloud-backup')cloudBackup('respaldo manual');if(action==='download-excel')downloadExcelBackup();if(action==='google-sheets-sync')googleSheetsSync();if(action==='open-google-sheet')openGoogleSheet();if(action==='download-backup')downloadBackup();if(action==='onboarding-later'){closeModal();showToast('Protección básica activa','Firebase y la copia diaria ya están funcionando. Puedes conectar Google más tarde.','info')}if(action==='onboarding-google'){closeModal();googleSheetsSync();}
+    if(action==='show-register')showRegister();if(action==='show-login')showLogin();if(action==='show-forgot')showForgot();if(action==='login')login();if(action==='register')register();if(action==='reset-password')resetPassword();if(action==='logout')logout();if(action==='create-business')createBusiness();if(action==='business-selector')renderBusinessSelector();if(action==='close-modal')closeModal();if(action==='save-business-name')saveBusinessName();if(action==='save-loan')saveLoan();if(action==='home-search')renderSearchResults('homeSearchResults',$('homeSearch').value.trim());if(action==='client-search')renderClients();if(action==='collection-search')renderCollections();if(action==='rename-business')renameBusiness();if(action==='edit-business-capital')openBusinessCapitalModal();if(action==='save-business-capital')saveBusinessCapital();if(action==='confirm-delete-business')deleteBusiness();if(action==='verify-protection')verifyProtection();if(action==='verify-cloud'){if(cloudLoadFailed)retryCloudLoad();else cloudSaveNow(true)}if(action==='cloud-backup')cloudBackup('respaldo manual');if(action==='download-excel')downloadExcelBackup();if(action==='google-sheets-sync')googleSheetsSync();if(action==='open-google-sheet')openGoogleSheet();if(action==='download-backup')downloadBackup();if(action==='onboarding-later'){closeModal();showToast('Protección básica activa','Firebase y la copia diaria ya están funcionando. Puedes conectar Google más tarde.','info')}if(action==='onboarding-google'){closeModal();googleSheetsSync();}
     const dbtn=e.target.closest('[data-delete-business]');if(dbtn){openDeleteBusinessConfirm(dbtn.dataset.deleteBusiness);return}
     const ob=e.target.closest('[data-open-business]');if(ob)openBusiness(ob.dataset.openBusiness);
     const nav=e.target.closest('[data-page]');if(nav)setPage(nav.dataset.page);
