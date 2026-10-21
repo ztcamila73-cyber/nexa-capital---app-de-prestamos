@@ -1058,7 +1058,7 @@ async function initFirebase(){
     if(!cloudDb) console.warn('Firebase Authentication está disponible, pero Realtime Database no pudo inicializarse.');
     cloudAuth.onAuthStateChanged(async user=>{
       if(user){
-        if(googleTokenOwnerUid&&googleTokenOwnerUid!==user.uid){googleAccessToken='';googleTokenOwnerUid='';googleSheetsTokenClient=null;}
+        if(googleTokenOwnerUid&&googleTokenOwnerUid!==user.uid){setGoogleToken('');googleTokenOwnerUid='';googleSheetsTokenClient=null;}
         currentUser={id:user.uid,email:user.email||'',name:user.displayName||(user.email||'Usuario').split('@')[0]};
         /* Entrada rápida: si este dispositivo ya tiene los datos de esta cuenta, se abre la app de inmediato
            y la nube se sincroniza en segundo plano. Solo la primera vez en un dispositivo se espera la descarga. */
@@ -1193,7 +1193,7 @@ async function login(){
 }
 async function register(){if(!cloudAuth){const ready=await initFirebase();if(!ready||!cloudAuth)return showToast('Firebase no está disponible',firebaseInitError||'No se pudo iniciar Firebase. Revisa la conexión y vuelve a intentarlo.','bad')}const name=$('regName').value.trim(),email=$('regEmail').value.trim().toLowerCase(),pass=$('regPass').value;if(!name)return showToast('Escribe tu nombre','','bad');if(!validEmail(email))return showToast('Revisa el correo','Usa un correo válido, por ejemplo nombre@correo.com.','bad');if(pass.length<6)return showToast('Contraseña muy corta','Usa mínimo 6 caracteres.','bad');try{const cred=await cloudAuth.createUserWithEmailAndPassword(email,pass);await cred.user.updateProfile({displayName:name});if(currentUser&&currentUser.id===cred.user.uid){currentUser.name=name}else{currentUser={id:cred.user.uid,email,name};await loadCloudState(cred.user.uid);openAfterLogin()}}catch(e){showToast('No se pudo crear la cuenta',firebaseErrorText(e),'bad')}}
 async function resetPassword(){if(!cloudAuth){const ready=await initFirebase();if(!ready||!cloudAuth)return showToast('Firebase no está disponible',firebaseInitError||'No se pudo iniciar Firebase. Revisa la conexión y vuelve a intentarlo.','bad')}const email=$('forgotEmail').value.trim().toLowerCase();if(!email)return showToast('Escribe tu correo','','bad');if(!validEmail(email))return showToast('Revisa el correo','Ejemplo: nombre@correo.com','bad');try{await cloudAuth.sendPasswordResetEmail(email);showLogin();showToast('Revisa tu correo','Se envió el enlace para cambiar la contraseña.')}catch(e){showToast('No se pudo enviar',firebaseErrorText(e),'bad')}}
-async function logout(){googleMetaLoaded=false;backupChecked=false;googleOffToastShown=false;lastFirebaseBackupAt='';lastFirebaseBackupReason='';backupCount=null;lastCloudOkAt='';stopGoogleSheetsMetaListener();if(cloudAuth)await cloudAuth.signOut();currentBusinessId=null;currentUser=null;showOnly('authScreen')}
+async function logout(){googleMetaLoaded=false;backupChecked=false;googleOffToastShown=false;lastFirebaseBackupAt='';lastFirebaseBackupReason='';backupCount=null;lastCloudOkAt='';stopGoogleSheetsMetaListener();setGoogleToken('');googleSheetsMeta={sheetId:'',sheetUrl:'',lastSyncAt:'',googleConnected:false,googleEmail:'',connectedAt:'',pendingAt:''};if(cloudAuth)await cloudAuth.signOut();currentBusinessId=null;currentUser=null;showOnly('authScreen')}
 
 function protectionOnboardingKey(){return PROTECTION_ONBOARDING_KEY+(currentUser?.id||'guest')}
 function showProtectionOnboarding(){if(!currentUser||localStorage.getItem(protectionOnboardingKey())==='1')return;localStorage.setItem(protectionOnboardingKey(),'1');$('modalTitle').textContent='Protege tu información';$('modalContent').innerHTML=`<div class="onboarding-protection"><div class="onboarding-lock"><svg viewBox="0 0 24 24"><path d="M12 3 5 6v5c0 4.6 2.8 8.2 7 10 4.2-1.8 7-5.4 7-10V6l-7-3Z"/><path d="m9 12 2 2 4-4"/></svg></div><div class="onboarding-lead"><b>Tu primer negocio ya está listo.</b><br>PrestApp protegerá la información automáticamente. Para tener una segunda copia visible fuera de la app, conecta Google Sheets una sola vez.</div><div class="onboarding-step"><div class="step-dot">✓</div><div><b>Guardado automático en Firebase</b><span>Cada cliente, préstamo y pago se guarda en la nube.</span></div></div><div class="onboarding-step"><div class="step-dot">✓</div><div><b>Copia diaria automática</b><span>Se crea al entrar a la app; también hacemos copia antes de eliminaciones.</span></div></div><div class="onboarding-step pending"><div class="step-dot">3</div><div><b>Conecta Google Sheets</b><span>Crea y mantiene el mismo archivo con negocios, clientes, préstamos y movimientos.</span></div></div><div class="onboarding-actions"><button class="secondary" type="button" data-action="onboarding-later">Hacerlo después</button><button class="primary" type="button" data-action="onboarding-google">Conectar Google ahora</button></div></div>`;showModal();if(cloudDb&&currentUser?.id)cloudDb.ref(cloudPath(currentUser.id,'settings/protectionOnboarding')).set({shown:true,shownAt:new Date().toISOString()}).catch(()=>{})}
@@ -1507,11 +1507,35 @@ function stopGoogleSheetsMetaListener(){
   try{if(googleSheetsMetaRef)googleSheetsMetaRef.off()}catch(e){}
   googleSheetsMetaRef=null;googleSheetsMetaRefUid=''
 }
+/* ---- Vínculo con Google: se guarda en 3 sitios (Firebase por HTTPS, Firebase por SDK y este dispositivo) ---- */
+const GOOGLE_META_LOCAL_KEY='PRESTAPP_GOOGLE_META_';
+const GOOGLE_TOKEN_SESSION_KEY='PRESTAPP_GOOGLE_TOKEN_';
+let googleTokenExpiresAt=0,googleExpiryTimer=null,googleAuthPromise=null;
+function readLocalGoogleMeta(uid){try{return JSON.parse(localStorage.getItem(GOOGLE_META_LOCAL_KEY+uid)||'null')||{}}catch(e){return {}}}
+function writeLocalGoogleMeta(){try{if(currentUser?.id&&googleSheetsMeta.sheetId)localStorage.setItem(GOOGLE_META_LOCAL_KEY+currentUser.id,JSON.stringify(googleSheetsMeta))}catch(e){}}
+function setGoogleToken(token,expiresInSec){
+  googleAccessToken=token||'';clearTimeout(googleExpiryTimer);
+  if(!token){googleTokenExpiresAt=0;try{sessionStorage.removeItem(GOOGLE_TOKEN_SESSION_KEY+(currentUser?.id||''))}catch(e){}return}
+  googleTokenExpiresAt=Date.now()+Math.max(60,(Number(expiresInSec)||3600)-60)*1000;
+  try{sessionStorage.setItem(GOOGLE_TOKEN_SESSION_KEY+(currentUser?.id||''),JSON.stringify({token,exp:googleTokenExpiresAt}))}catch(e){}
+  googleExpiryTimer=setTimeout(()=>{googleAccessToken='';googleTokenExpiresAt=0;googleLastRenewTry=0;renderGoogleSheetsState()},Math.max(1000,googleTokenExpiresAt-Date.now()))
+}
+function restoreGoogleToken(){
+  try{const s=JSON.parse(sessionStorage.getItem(GOOGLE_TOKEN_SESSION_KEY+(currentUser?.id||''))||'null');if(s&&s.token&&s.exp>Date.now()+60000){googleAccessToken=s.token;googleTokenOwnerUid=currentUser.id;googleTokenExpiresAt=s.exp;clearTimeout(googleExpiryTimer);googleExpiryTimer=setTimeout(()=>{googleAccessToken='';googleTokenExpiresAt=0;googleLastRenewTry=0;renderGoogleSheetsState()},Math.max(1000,s.exp-Date.now()))}}catch(e){}
+}
 function applyGoogleSheetsMeta(remote){
-  const beforeId=googleSheetsMeta.sheetId||'';
-  googleSheetsMeta={sheetId:'',sheetUrl:'',lastSyncAt:'',googleConnected:false,googleEmail:'',connectedAt:'',pendingAt:'',...(remote||{})};
+  const local=googleSheetsMeta||{},incoming=remote||{};
+  /* Nunca se "desvincula" por una lectura vacía: solo se acepta un vínculo vacío si la lectura fue confirmada y no hay nada local */
+  const base={sheetId:'',sheetUrl:'',lastSyncAt:'',googleConnected:false,googleEmail:'',connectedAt:'',pendingAt:''};
+  googleSheetsMeta=incoming.sheetId?{...base,...local,...incoming}:(local.sheetId?{...base,...local}:{...base,...incoming});
   if(googleSheetsMeta.sheetId)googleSheetsMeta.googleConnected=true;
-  renderGoogleSheetsState();
+  writeLocalGoogleMeta();renderGoogleSheetsState();
+}
+async function readRemoteGoogleMeta(uid){
+  /* HTTPS directo primero (no depende del WebSocket); el SDK es el plan B */
+  try{return {ok:true,val:(await restDb('GET',cloudPath(uid,'settings/googleSheets')))||{}}}catch(e){console.warn('Google meta REST:',e)}
+  try{const snap=await Promise.race([cloudDb.ref(cloudPath(uid,'settings/googleSheets')).once('value'),new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),15000))]);return {ok:true,val:snap.val()||{}}}catch(e){console.warn('Google meta SDK:',e)}
+  return {ok:false,val:{}}
 }
 async function loadGoogleSheetsMeta(){
   googleMetaLoaded=false;
@@ -1519,18 +1543,34 @@ async function loadGoogleSheetsMeta(){
   googleSheetsMeta={sheetId:'',sheetUrl:'',lastSyncAt:'',googleConnected:false,googleEmail:'',connectedAt:'',pendingAt:''};
   stopGoogleSheetsMetaListener();
   if(!cloudDb||!currentUser?.id){renderGoogleSheetsState();return}
-  const uid=currentUser.id,ref=cloudDb.ref(cloudPath(uid,'settings/googleSheets'));googleSheetsMetaRef=ref;googleSheetsMetaRefUid=uid;
-  try{
-    const snap=await Promise.race([ref.once('value'),new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),6000))]);if(currentUser?.id!==uid)return;applyGoogleSheetsMeta(snap.val()||{});googleMetaLoaded=true;renderProtectionBanner();if(!googleSheetsMeta.sheetId&&googleSheetsConfigured()&&!googleOffToastShown){googleOffToastShown=true;setTimeout(()=>showToast('Falta conectar tu copia en Google','Tu información todavía NO se guarda en el respaldo de Google. Entra a Ajustes → Protección de datos y pulsa “Conectar Google”.','bad'),1800)}
-    ref.on('value',live=>{if(currentUser?.id!==uid)return;applyGoogleSheetsMeta(live.val()||{})},err=>console.warn('Google Sheets en vivo:',err));
-  }catch(e){console.warn('Google Sheets config:',e);renderGoogleSheetsState()}
+  const uid=currentUser.id;
+  /* 1) Al instante: lo que este dispositivo ya recuerda (y el permiso vigente si sigue valiendo) */
+  const cached=readLocalGoogleMeta(uid);if(cached.sheetId)applyGoogleSheetsMeta(cached);
+  restoreGoogleToken();renderGoogleSheetsState();
+  /* 2) Confirmar con Firebase */
+  const res=await readRemoteGoogleMeta(uid);if(currentUser?.id!==uid)return;
+  if(res.ok){
+    applyGoogleSheetsMeta(res.val);googleMetaLoaded=true;
+    /* Si este dispositivo sabía de la hoja pero Firebase no, se repara el vínculo en la nube */
+    if(googleSheetsMeta.sheetId&&!res.val.sheetId)persistGoogleSheetsMeta().catch(()=>{});
+  }else if(googleSheetsMeta.sheetId){googleMetaLoaded=true}
+  renderProtectionBanner();
+  if(!googleSheetsMeta.sheetId&&res.ok&&googleSheetsConfigured()&&!googleOffToastShown){googleOffToastShown=true;setTimeout(()=>showToast('Falta conectar tu copia en Google','Tu información todavía NO se guarda en el respaldo de Google. Entra a Ajustes → Protección de datos y pulsa “Conectar Google”.','bad'),1800)}
+  if(!res.ok&&!googleSheetsMeta.sheetId)showToast('No se pudo comprobar Google Sheets','No se alcanzó a leer el estado de la copia de Google. Revisa tu Internet; no se perdió nada.','info');
+  /* 3) Cambios en vivo desde otros dispositivos (solo si el SDK logra conectar) */
+  try{const ref=cloudDb.ref(cloudPath(uid,'settings/googleSheets'));googleSheetsMetaRef=ref;googleSheetsMetaRefUid=uid;ref.on('value',live=>{if(currentUser?.id!==uid)return;const v=live.val();if(v&&v.sheetId)applyGoogleSheetsMeta(v)},err=>console.warn('Google Sheets en vivo:',err))}catch(e){console.warn(e)}
 }
 async function persistGoogleSheetsMeta(){
-  if(!cloudDb||!currentUser?.id)return;
-  await cloudDb.ref(cloudPath(currentUser.id,'settings/googleSheets')).update({
+  if(!currentUser?.id)return;
+  writeLocalGoogleMeta();
+  if(!cloudDb)return;
+  const uid=currentUser.id,payload={
     sheetId:googleSheetsMeta.sheetId||'',sheetUrl:googleSheetsMeta.sheetUrl||'',lastSyncAt:googleSheetsMeta.lastSyncAt||'',
     googleConnected:!!googleSheetsMeta.sheetId,googleEmail:googleSheetsMeta.googleEmail||'',connectedAt:googleSheetsMeta.connectedAt||'',pendingAt:googleSheetsMeta.pendingAt||''
-  })
+  };
+  /* Se escribe por HTTPS y por el SDK a la vez; basta con que una confirme (el SDK sigue reintentando solo) */
+  const attempts=[restDb('PATCH',cloudPath(uid,'settings/googleSheets'),payload),Promise.resolve().then(()=>cloudDb.ref(cloudPath(uid,'settings/googleSheets')).update(payload))];
+  await new Promise((ok,bad)=>{let fails=0;attempts.forEach(p=>p.then(ok,e=>{if(++fails>=attempts.length)bad(e)}));setTimeout(()=>bad(new Error('timeout')),20000)})
 }
 function renderGoogleSheetsState(){
   const text=$('googleSheetsStateText'),btn=$('googleSheetsButton'),openBtn=$('googleSheetsOpenButton'),badge=$('googleSheetsBadge'),issue=$('googleSheetsIssue'),item=$('googleProtectionItem'),optional=$('googleSheetsOptional');
@@ -1587,6 +1627,11 @@ function notifyGoogleReconnectNeeded(){
 }
 
 function requestGoogleAccess(){
+  if(googleAuthPromise)return googleAuthPromise;
+  googleAuthPromise=requestGoogleAccessInner().finally(()=>{googleAuthPromise=null});
+  return googleAuthPromise
+}
+function requestGoogleAccessInner(){
   return new Promise((resolve,reject)=>{
     let settled=false;
     const finishOk=(token)=>{if(settled)return;settled=true;resolve(token)};
@@ -1610,9 +1655,10 @@ function requestGoogleAccess(){
             }
             return finishBad(new Error(desc||code||'Google no pudo autorizar la cuenta.'));
           }
-          googleAccessToken=resp?.access_token||'';
+          setGoogleToken(resp?.access_token||'',resp?.expires_in);
           if(!googleAccessToken)return finishBad(new Error('Google no entregó un token de autorización.'));
           googleTokenOwnerUid=currentUser?.id||'';
+          if(!googleSheetsMeta.googleEmail)fetchGoogleEmail();
           googleConnectionIssue='';
           googleReconnectRequired=false;googleReconnectNoticeShown=false;
           googleSheetsMeta.googleConnected=true;
@@ -1638,9 +1684,12 @@ function requestGoogleAccess(){
         }
       });
       const oauthPrompt=googleSheetsMeta.sheetId?'':'select_account consent';
-      googleSheetsTokenClient.requestAccessToken({prompt:oauthPrompt});
+      const req={prompt:oauthPrompt};if(googleSheetsMeta.googleEmail)req.hint=googleSheetsMeta.googleEmail;googleSheetsTokenClient.requestAccessToken(req);
     }catch(e){finishBad(e)}
   })
+}
+async function fetchGoogleEmail(){
+  try{const r=await googleApi('https://www.googleapis.com/drive/v3/about?fields=user(emailAddress)');const m=r?.user?.emailAddress;if(m){googleSheetsMeta.googleEmail=m;persistGoogleSheetsMeta().catch(()=>{})}}catch(e){console.warn('Correo de Google:',e)}
 }
 async function googleApi(url,options={}){
   if(!googleAccessToken)throw new Error('Autoriza Google para continuar la sincronización.');
@@ -1649,7 +1698,7 @@ async function googleApi(url,options={}){
   const res=await fetch(url,{...options,headers});
   const data=await res.json().catch(()=>({}));
   if(!res.ok){
-    if(res.status===401){googleAccessToken='';googleLastRenewTry=0;renderGoogleSheetsState();throw new Error('La autorización de Google venció. Reconecta Google para continuar actualizando la segunda copia.')}
+    if(res.status===401){setGoogleToken('');googleLastRenewTry=0;googleReconnectRequired=true;renderGoogleSheetsState();throw new Error('La autorización de Google venció. Reconecta Google para continuar actualizando la segunda copia.')}
     const raw=data?.error?.message||`Google API ${res.status}`,low=raw.toLowerCase();
     if(low.includes('has not been used')||low.includes('disabled')||low.includes('accessnotconfigured'))throw new Error('Falta habilitar Google Sheets API en Google Cloud. Es una configuración única del administrador.');
     if(low.includes('origin')||low.includes('redirect_uri_mismatch')||low.includes('unauthorized_client'))throw new Error(`En Google Cloud agrega ${location.origin} en Orígenes de JavaScript autorizados del OAuth Client. No se configura en Firebase Authentication.`);
