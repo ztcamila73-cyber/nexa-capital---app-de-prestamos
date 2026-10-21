@@ -1042,18 +1042,33 @@ async function initFirebase(){
 }
 /* Lee los datos de la nube. Si el SDK (WebSocket) se queda colgado por la red, reintenta por HTTPS directo. */
 async function readRemoteState(uid){
-  const timeout=ms=>new Promise((_,rej)=>setTimeout(()=>rej(Object.assign(new Error('timeout'),{code:'timeout'})),ms));
-  try{const snap=await Promise.race([cloudDb.ref(cloudPath(uid,'state')).once('value'),timeout(9000)]);return snap.val()}
-  catch(e){
-    if(e?.code==='PERMISSION_DENIED'||String(e?.code||'').includes('permission'))throw e;
-    const user=cloudAuth?.currentUser;if(!user||typeof user.getIdToken!=='function')throw e;
-    console.warn('SDK lento; leyendo por HTTPS directo:',e);
+  /* El SDK sigue intentando todo el tiempo; si tarda más de 7 s se lanza además una lectura HTTPS directa.
+     Gana la primera que responda. Solo falla si ambas fallan (o pasan 90 s). */
+  const sdk=cloudDb.ref(cloudPath(uid,'state')).once('value').then(s=>s.val());
+  const user=cloudAuth?.currentUser;
+  if(!user||typeof user.getIdToken!=='function')return await sdk;
+  const rest=async()=>{
     const token=await user.getIdToken();
     const base=String(NEXA_FIREBASE_CONFIG.databaseURL).replace(/\/+$/,'');
     const res=await fetch(`${base}/${cloudPath(uid,'state')}.json?auth=${encodeURIComponent(token)}`);
     if(!res.ok)throw Object.assign(new Error('Firebase respondió '+res.status),{code:res.status===401||res.status===403?'PERMISSION_DENIED':'database/error'});
     return await res.json()
-  }
+  };
+  return await new Promise((resolve,reject)=>{
+    let settled=false,fails=0,restStarted=false;
+    const win=v=>{if(!settled){settled=true;resolve(v)}};
+    const lose=e=>{if(settled)return;fails++;console.warn('Lectura de nube falló:',e);if(e?.code==='PERMISSION_DENIED'||fails>=2){settled=true;reject(e)}};
+    const startRest=()=>{if(restStarted||settled)return;restStarted=true;rest().then(win,lose)};
+    sdk.then(win,e=>{lose(e);startRest()});
+    setTimeout(startRest,7000);
+    setTimeout(()=>{if(!settled){settled=true;reject(Object.assign(new Error('timeout'),{code:'timeout'}))}},90000);
+  })
+}
+async function retryCloudLoad(){
+  if(!currentUser?.id||!cloudDb)return false;
+  await loadCloudState(currentUser.id);
+  if(!cloudLoadFailed){refreshAll();showToast('Nube conectada','Tus datos se cargaron correctamente y los cambios vuelven a guardarse.');return true}
+  return false
 }
 let cloudLoadFailed=false;
 async function loadCloudState(uid){if(!cloudDb)return;cloudLoading=true;cloudLoadFailed=false;setCloud('work','Cargando…');try{const remote=await readRemoteState(uid);if(remote?.data){applyState(remote.data)}else if((db.businesses?.length||0)+(db.clients?.length||0)+(db.loans?.length||0)>0){await cloudDb.ref(cloudPath(uid,'state')).set({data:appState(),updatedAt:new Date().toISOString()})}else{applyState({})}localStorage.setItem(CLOUD_OWNER_KEY,uid);localStorage.setItem(CLOUD_DIRTY_KEY,'0');setCloud('ok','Nube al día');await loadGoogleSheetsMeta();/* La copia diaria y su estado se hacen en segundo plano para no retrasar el inicio de sesión */Promise.resolve().then(async()=>{try{await maybeDailyBackup(appState(),'respaldo automático al iniciar');await loadBackupStatus()}catch(err){console.warn('Respaldo al iniciar:',err)}});checkProtectionReminder()}catch(e){console.error(e);cloudLoadFailed=true;setCloud('bad','Error al cargar nube');showToast('No se pudo cargar tus datos','Para no pisar tu información guardada, no se guardarán cambios hasta que cargue bien. Revisa Internet y recarga la página. '+firebaseErrorText(e),'bad')}finally{cloudLoading=false}}
@@ -1599,7 +1614,7 @@ function bindEvents(){
   document.addEventListener('click',e=>{
     const action=e.target.closest('[data-action]')?.dataset.action;
     if(action==='toggle-pass'){const btn=e.target.closest('[data-action]'),inp=btn.parentElement.querySelector('input');if(inp){const show=inp.type==='password';inp.type=show?'text':'password';btn.classList.toggle('on',show);btn.setAttribute('aria-label',show?'Ocultar contraseña':'Mostrar contraseña')}return}
-    if(action==='show-register')showRegister();if(action==='show-login')showLogin();if(action==='show-forgot')showForgot();if(action==='login')login();if(action==='register')register();if(action==='reset-password')resetPassword();if(action==='logout')logout();if(action==='create-business')createBusiness();if(action==='business-selector')renderBusinessSelector();if(action==='close-modal')closeModal();if(action==='save-business-name')saveBusinessName();if(action==='save-loan')saveLoan();if(action==='home-search')renderSearchResults('homeSearchResults',$('homeSearch').value.trim());if(action==='client-search')renderClients();if(action==='collection-search')renderCollections();if(action==='rename-business')renameBusiness();if(action==='edit-business-capital')openBusinessCapitalModal();if(action==='save-business-capital')saveBusinessCapital();if(action==='confirm-delete-business')deleteBusiness();if(action==='verify-cloud')cloudSaveNow(true);if(action==='cloud-backup')cloudBackup('respaldo manual');if(action==='download-excel')downloadExcelBackup();if(action==='google-sheets-sync')googleSheetsSync();if(action==='open-google-sheet')openGoogleSheet();if(action==='download-backup')downloadBackup();if(action==='onboarding-later'){closeModal();showToast('Protección básica activa','Firebase y la copia diaria ya están funcionando. Puedes conectar Google más tarde.','info')}if(action==='onboarding-google'){closeModal();googleSheetsSync();}
+    if(action==='show-register')showRegister();if(action==='show-login')showLogin();if(action==='show-forgot')showForgot();if(action==='login')login();if(action==='register')register();if(action==='reset-password')resetPassword();if(action==='logout')logout();if(action==='create-business')createBusiness();if(action==='business-selector')renderBusinessSelector();if(action==='close-modal')closeModal();if(action==='save-business-name')saveBusinessName();if(action==='save-loan')saveLoan();if(action==='home-search')renderSearchResults('homeSearchResults',$('homeSearch').value.trim());if(action==='client-search')renderClients();if(action==='collection-search')renderCollections();if(action==='rename-business')renameBusiness();if(action==='edit-business-capital')openBusinessCapitalModal();if(action==='save-business-capital')saveBusinessCapital();if(action==='confirm-delete-business')deleteBusiness();if(action==='verify-cloud'){if(cloudLoadFailed)retryCloudLoad();else cloudSaveNow(true)}if(action==='cloud-backup')cloudBackup('respaldo manual');if(action==='download-excel')downloadExcelBackup();if(action==='google-sheets-sync')googleSheetsSync();if(action==='open-google-sheet')openGoogleSheet();if(action==='download-backup')downloadBackup();if(action==='onboarding-later'){closeModal();showToast('Protección básica activa','Firebase y la copia diaria ya están funcionando. Puedes conectar Google más tarde.','info')}if(action==='onboarding-google'){closeModal();googleSheetsSync();}
     const dbtn=e.target.closest('[data-delete-business]');if(dbtn){openDeleteBusinessConfirm(dbtn.dataset.deleteBusiness);return}
     const ob=e.target.closest('[data-open-business]');if(ob)openBusiness(ob.dataset.openBusiness);
     const nav=e.target.closest('[data-page]');if(nav)setPage(nav.dataset.page);
@@ -1619,7 +1634,7 @@ function bindEvents(){
     const backClient=e.target.closest('[data-back-client]');if(backClient)openClientDetail(backClient.dataset.backClient);
     const hist=e.target.closest('[data-loan-history]');if(hist)openLoanHistory(hist.dataset.loanHistory);
   });
-  $('loanAmount').addEventListener('input',e=>{formatMoneyField(e.target);updateLoanModeUI()});$('loanRate').addEventListener('input',updateLoanCalc);$('loanPaymentMode').addEventListener('change',updateLoanModeUI);$('loanInterestMode')?.addEventListener('change',updateLoanModeUI);$('loanFixedInterest')?.addEventListener('input',e=>{formatMoneyField(e.target);updateLoanCalc()});$('loanClientPhone').addEventListener('input',updateExistingClientNote);$('loanClientName').addEventListener('blur',updateExistingClientNote);$('loanStartDate').addEventListener('change',()=>{const f=$('loanFirstDue');if(f&&!f.dataset.manual&&$('loanStartDate').value)f.value=addMonthsISO($('loanStartDate').value,1);updateLoanModeUI()});$('loanFirstDue')?.addEventListener('change',()=>{$('loanFirstDue').dataset.manual='1'});$('homeSearch').addEventListener('input',()=>renderSearchResults('homeSearchResults',$('homeSearch').value.trim()));$('clientSearch').addEventListener('input',renderClients);$('collectionSearch').addEventListener('input',renderCollections);$('clientYear').addEventListener('change',renderClients);$('historyYear').addEventListener('change',renderHistory);$('modal').addEventListener('click',e=>{if(e.target===$('modal'))closeModal()});document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.activeElement?.id==='businessNameInput'){e.preventDefault();saveBusinessName()}});window.addEventListener('online',()=>{cloudSaveNow(false);if(googleAccessToken&&googleSheetsMeta.sheetId&&googleSheetsMeta.pendingAt)syncGoogleSheetsNow(false)});document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&currentUser){cloudSaveNow(false);checkProtectionReminder();if(googleAccessToken&&googleSheetsMeta.sheetId&&googleSheetsMeta.pendingAt)syncGoogleSheetsNow(false)}else if(document.visibilityState==='hidden'&&currentUser){cloudSaveNow(false);if(googleAccessToken&&googleSheetsMeta.sheetId&&googleSheetsMeta.pendingAt)syncGoogleSheetsNow(false)}});
+  $('loanAmount').addEventListener('input',e=>{formatMoneyField(e.target);updateLoanModeUI()});$('loanRate').addEventListener('input',updateLoanCalc);$('loanPaymentMode').addEventListener('change',updateLoanModeUI);$('loanInterestMode')?.addEventListener('change',updateLoanModeUI);$('loanFixedInterest')?.addEventListener('input',e=>{formatMoneyField(e.target);updateLoanCalc()});$('loanClientPhone').addEventListener('input',updateExistingClientNote);$('loanClientName').addEventListener('blur',updateExistingClientNote);$('loanStartDate').addEventListener('change',()=>{const f=$('loanFirstDue');if(f&&!f.dataset.manual&&$('loanStartDate').value)f.value=addMonthsISO($('loanStartDate').value,1);updateLoanModeUI()});$('loanFirstDue')?.addEventListener('change',()=>{$('loanFirstDue').dataset.manual='1'});$('homeSearch').addEventListener('input',()=>renderSearchResults('homeSearchResults',$('homeSearch').value.trim()));$('clientSearch').addEventListener('input',renderClients);$('collectionSearch').addEventListener('input',renderCollections);$('clientYear').addEventListener('change',renderClients);$('historyYear').addEventListener('change',renderHistory);$('modal').addEventListener('click',e=>{if(e.target===$('modal'))closeModal()});document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.activeElement?.id==='businessNameInput'){e.preventDefault();saveBusinessName()}});window.addEventListener('online',()=>{if(cloudLoadFailed)retryCloudLoad();else cloudSaveNow(false);if(googleAccessToken&&googleSheetsMeta.sheetId&&googleSheetsMeta.pendingAt)syncGoogleSheetsNow(false)});document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&currentUser){cloudSaveNow(false);checkProtectionReminder();if(googleAccessToken&&googleSheetsMeta.sheetId&&googleSheetsMeta.pendingAt)syncGoogleSheetsNow(false)}else if(document.visibilityState==='hidden'&&currentUser){cloudSaveNow(false);if(googleAccessToken&&googleSheetsMeta.sheetId&&googleSheetsMeta.pendingAt)syncGoogleSheetsNow(false)}});
 }
 
 bindEvents();
