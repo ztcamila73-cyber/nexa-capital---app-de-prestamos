@@ -1558,6 +1558,18 @@ async function loadGoogleSheetsMeta(){
     if(googleSheetsMeta.sheetId&&!res.val.sheetId)persistGoogleSheetsMeta().catch(()=>{});
   }else if(googleSheetsMeta.sheetId){googleMetaLoaded=true}
   renderProtectionBanner();
+  /* Recuperación tras recargar: si el permiso de Google aún es válido, reanuda la sincronización pendiente
+     usando el mismo spreadsheet. Los tokens OAuth vencidos no se pueden renovar de forma permanente
+     desde un HTML estático; en ese caso se informa que hace falta autorización del usuario. */
+  if(googleSheetsMeta.sheetId && googleSheetsMeta.pendingAt){
+    if(googleAccessToken && googleTokenExpiresAt>Date.now()+60000){
+      setTimeout(()=>{if(currentUser?.id===uid)syncGoogleSheetsWhenFree(false)},0);
+    }else{
+      googleReconnectRequired=true;
+      googleConnectionIssue='Hay cambios pendientes, pero el permiso de Google venció. Pulsa “Reconectar Google” para actualizar la misma hoja.';
+      renderGoogleSheetsState();
+    }
+  }
   if(!googleSheetsMeta.sheetId&&res.ok&&googleSheetsConfigured()&&!googleOffToastShown){googleOffToastShown=true;setTimeout(()=>showToast('Falta conectar tu copia en Google','Tu información todavía NO se guarda en el respaldo de Google. Entra a Ajustes → Protección de datos y pulsa “Conectar Google”.','bad'),1800)}
   if(!res.ok&&!googleSheetsMeta.sheetId)showToast('No se pudo comprobar Google Sheets','No se alcanzó a leer el estado de la copia de Google. Revisa tu Internet; no se perdió nada.','info');
   /* 3) Cambios en vivo desde otros dispositivos (solo si el SDK logra conectar) */
@@ -1701,14 +1713,31 @@ function requestGoogleAccessInner(){
 async function fetchGoogleEmail(){
   try{const r=await googleApi('https://www.googleapis.com/drive/v3/about?fields=user(emailAddress)');const m=r?.user?.emailAddress;if(m){googleSheetsMeta.googleEmail=m;persistGoogleSheetsMeta().catch(()=>{})}}catch(e){console.warn('Correo de Google:',e)}
 }
-async function googleApi(url,options={}){
+async function googleApi(url,options={},_renewedAfter401=false){
   if(!googleAccessToken)throw new Error('Autoriza Google para continuar la sincronización.');
   const headers={...(options.headers||{}),Authorization:`Bearer ${googleAccessToken}`};
   if(options.body&&!headers['Content-Type'])headers['Content-Type']='application/json';
   const res=await fetch(url,{...options,headers});
   const data=await res.json().catch(()=>({}));
   if(!res.ok){
-    if(res.status===401){setGoogleToken('');googleLastRenewTry=0;googleReconnectRequired=true;renderGoogleSheetsState();throw new Error('La autorización de Google venció. Reconecta Google para continuar actualizando la segunda copia.')}
+    /* Si Google rechaza el token por vencimiento, intenta renovarlo una vez y repetir
+       la misma petición. Google Identity Services puede necesitar interacción del usuario;
+       si el navegador bloquea el flujo, se conserva el aviso de reconexión. */
+    if(res.status===401){
+      setGoogleToken('');googleLastRenewTry=0;
+      if(!_renewedAfter401&&googleSheetsMeta.sheetId&&googleSheetsConfigured()){
+        try{
+          await requestGoogleAccess();
+          return await googleApi(url,options,true);
+        }catch(renewErr){
+          googleReconnectRequired=true;googleConnectionIssue='Google necesita renovar la autorización. Pulsa “Reconectar Google” si el navegador no permitió hacerlo automáticamente.';
+          renderGoogleSheetsState();
+          throw new Error(googleConnectionIssue);
+        }
+      }
+      googleReconnectRequired=true;renderGoogleSheetsState();
+      throw new Error('La autorización de Google venció. Pulsa “Reconectar Google” para continuar actualizando la segunda copia.');
+    }
     const raw=data?.error?.message||`Google API ${res.status}`,low=raw.toLowerCase();
     if(low.includes('has not been used')||low.includes('disabled')||low.includes('accessnotconfigured'))throw new Error('Falta habilitar Google Sheets API en Google Cloud. Es una configuración única del administrador.');
     if(low.includes('origin')||low.includes('redirect_uri_mismatch')||low.includes('unauthorized_client'))throw new Error(`En Google Cloud agrega ${location.origin} en Orígenes de JavaScript autorizados del OAuth Client. No se configura en Firebase Authentication.`);
@@ -1838,6 +1867,13 @@ function bindEvents(){
     const assign=e.target.closest('[data-assign-payment]');if(assign){const total=parseMoney($('payTotal')?.value),kind=assign.dataset.assignPayment;if(kind==='interest'){$('payInterest').value=total?new Intl.NumberFormat('es-CO').format(total):'0';$('payCapital').value='0'}else{$('payInterest').value='0';$('payCapital').value=total?new Intl.NumberFormat('es-CO').format(total):'0'}updatePaymentImpact($('modalContent')?.querySelector('[data-save-payment]')?.dataset.savePayment);return}const sp=e.target.closest('[data-save-payment]');if(sp)savePayment(sp.dataset.savePayment);
     const backClient=e.target.closest('[data-back-client]');if(backClient)openClientDetail(backClient.dataset.backClient);
     const hist=e.target.closest('[data-loan-history]');if(hist)openLoanHistory(hist.dataset.loanHistory);
+  });
+  window.addEventListener('pagehide',()=>{
+    if(!currentUser)return;
+    /* No se confía en operaciones asíncronas al cerrar: el pendiente se persiste antes de salir,
+       y se reintenta al volver a abrir la aplicación. */
+    if(localStorage.getItem(CLOUD_DIRTY_KEY)==='1' && googleSheetsMeta.sheetId){googleSheetsMeta.pendingAt=googleSheetsMeta.pendingAt||new Date().toISOString();writeLocalGoogleMeta();}
+    if(localStorage.getItem(CLOUD_DIRTY_KEY)==='1')void cloudSaveNow(false);
   });
   $('loanAmount').addEventListener('input',e=>{formatMoneyField(e.target);updateLoanModeUI()});$('loanRate').addEventListener('input',updateLoanCalc);$('loanPaymentMode').addEventListener('change',updateLoanModeUI);$('loanInterestMode')?.addEventListener('change',updateLoanModeUI);$('loanFixedInterest')?.addEventListener('input',e=>{formatMoneyField(e.target);updateLoanCalc()});$('loanClientPhone').addEventListener('input',updateExistingClientNote);$('loanClientName').addEventListener('blur',updateExistingClientNote);$('loanStartDate').addEventListener('change',()=>{const f=$('loanFirstDue');if(f&&!f.dataset.manual&&$('loanStartDate').value)f.value=addMonthsISO($('loanStartDate').value,1);updateLoanModeUI()});$('loanFirstDue')?.addEventListener('change',()=>{$('loanFirstDue').dataset.manual='1'});$('homeSearch').addEventListener('input',()=>renderSearchResults('homeSearchResults',$('homeSearch').value.trim()));$('clientSearch').addEventListener('input',renderClients);$('collectionSearch').addEventListener('input',renderCollections);$('clientYear').addEventListener('change',renderClients);$('historyYear').addEventListener('change',renderHistory);$('modal').addEventListener('click',e=>{if(e.target===$('modal'))closeModal()});document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.activeElement?.id==='businessNameInput'){e.preventDefault();saveBusinessName()}});window.addEventListener('online',()=>{if(cloudLoadFailed)retryCloudLoad();else cloudSaveNow(false);if(googleAccessToken&&googleSheetsMeta.sheetId&&googleSheetsMeta.pendingAt)syncGoogleSheetsNow(false)});document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&currentUser){cloudSaveNow(false);checkProtectionReminder();if(googleAccessToken&&googleSheetsMeta.sheetId&&googleSheetsMeta.pendingAt)syncGoogleSheetsNow(false)}else if(document.visibilityState==='hidden'&&currentUser){cloudSaveNow(false);if(googleAccessToken&&googleSheetsMeta.sheetId&&googleSheetsMeta.pendingAt)syncGoogleSheetsNow(false)}});
 }
