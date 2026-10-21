@@ -1032,6 +1032,21 @@ async function ensureFirebaseSDK(){
   }
   return ok();
 }
+/* Vigila la conexión real de Realtime Database. Si Firebase vuelve a estar disponible
+   después de un fallo de carga, reintenta leer la nube antes de permitir guardados. */
+let firebaseConnectionMonitorRef=null;
+function watchFirebaseConnection(){
+  if(!cloudDb)return;
+  try{
+    if(firebaseConnectionMonitorRef)firebaseConnectionMonitorRef.off();
+    firebaseConnectionMonitorRef=cloudDb.ref('.info/connected');
+    firebaseConnectionMonitorRef.on('value',snap=>{
+      if(snap.val()===true&&currentUser?.id&&cloudLoadFailed&&!cloudLoading){
+        retryCloudLoad().catch(err=>console.warn('Reintento al recuperar conexión Firebase:',err));
+      }
+    });
+  }catch(err){console.warn('No se pudo vigilar la conexión Firebase:',err)}
+}
 async function initFirebase(){
   const config=window.NEXA_FIREBASE_CONFIG || NEXA_FIREBASE_CONFIG;
   firebaseInitError='';
@@ -1057,6 +1072,7 @@ async function initFirebase(){
     }catch(err){console.warn('Persistencia local:',err)}
     try{cloudDb=typeof window.firebase.database==='function'?window.firebase.database():null}catch(dbErr){cloudDb=null;console.error('Realtime Database:',dbErr)}
     if(!cloudDb) console.warn('Firebase Authentication está disponible, pero Realtime Database no pudo inicializarse.');
+    else watchFirebaseConnection();
     cloudAuth.onAuthStateChanged(async user=>{
       if(user){
         if(googleTokenOwnerUid&&googleTokenOwnerUid!==user.uid){setGoogleToken('');googleTokenOwnerUid='';googleSheetsTokenClient=null;}
@@ -1932,7 +1948,7 @@ function bindEvents(){
     const backClient=e.target.closest('[data-back-client]');if(backClient)openClientDetail(backClient.dataset.backClient);
     const hist=e.target.closest('[data-loan-history]');if(hist)openLoanHistory(hist.dataset.loanHistory);
   });
-  $('loanAmount').addEventListener('input',e=>{formatMoneyField(e.target);updateLoanModeUI()});$('loanRate').addEventListener('input',updateLoanCalc);$('loanPaymentMode').addEventListener('change',updateLoanModeUI);$('loanInterestMode')?.addEventListener('change',updateLoanModeUI);$('loanFixedInterest')?.addEventListener('input',e=>{formatMoneyField(e.target);updateLoanCalc()});$('loanClientPhone').addEventListener('input',updateExistingClientNote);$('loanClientName').addEventListener('blur',updateExistingClientNote);$('loanStartDate').addEventListener('change',()=>{const f=$('loanFirstDue');if(f&&!f.dataset.manual&&$('loanStartDate').value)f.value=addMonthsISO($('loanStartDate').value,1);updateLoanModeUI()});$('loanFirstDue')?.addEventListener('change',()=>{$('loanFirstDue').dataset.manual='1'});$('homeSearch').addEventListener('input',()=>renderSearchResults('homeSearchResults',$('homeSearch').value.trim()));$('clientSearch').addEventListener('input',renderClients);$('collectionSearch').addEventListener('input',renderCollections);$('clientYear').addEventListener('change',renderClients);$('historyYear').addEventListener('change',renderHistory);$('modal').addEventListener('click',e=>{if(e.target===$('modal'))closeModal()});document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.activeElement?.id==='businessNameInput'){e.preventDefault();saveBusinessName()}});window.addEventListener('online',()=>{if(cloudLoadFailed)retryCloudLoad();else cloudSaveNow(false);if(googleAccessToken&&googleSheetsMeta.sheetId&&googleSheetsMeta.pendingAt)syncGoogleSheetsNow(false)});document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&currentUser){cloudSaveNow(false);checkProtectionReminder();if(googleAccessToken&&googleSheetsMeta.sheetId&&googleSheetsMeta.pendingAt)syncGoogleSheetsNow(false)}else if(document.visibilityState==='hidden'&&currentUser){cloudSaveNow(false);if(googleAccessToken&&googleSheetsMeta.sheetId&&googleSheetsMeta.pendingAt)syncGoogleSheetsNow(false)}});
+  $('loanAmount').addEventListener('input',e=>{formatMoneyField(e.target);updateLoanModeUI()});$('loanRate').addEventListener('input',updateLoanCalc);$('loanPaymentMode').addEventListener('change',updateLoanModeUI);$('loanInterestMode')?.addEventListener('change',updateLoanModeUI);$('loanFixedInterest')?.addEventListener('input',e=>{formatMoneyField(e.target);updateLoanCalc()});$('loanClientPhone').addEventListener('input',updateExistingClientNote);$('loanClientName').addEventListener('blur',updateExistingClientNote);$('loanStartDate').addEventListener('change',()=>{const f=$('loanFirstDue');if(f&&!f.dataset.manual&&$('loanStartDate').value)f.value=addMonthsISO($('loanStartDate').value,1);updateLoanModeUI()});$('loanFirstDue')?.addEventListener('change',()=>{$('loanFirstDue').dataset.manual='1'});$('homeSearch').addEventListener('input',()=>renderSearchResults('homeSearchResults',$('homeSearch').value.trim()));$('clientSearch').addEventListener('input',renderClients);$('collectionSearch').addEventListener('input',renderCollections);$('clientYear').addEventListener('change',renderClients);$('historyYear').addEventListener('change',renderHistory);$('modal').addEventListener('click',e=>{if(e.target===$('modal'))closeModal()});document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.activeElement?.id==='businessNameInput'){e.preventDefault();saveBusinessName()}});window.addEventListener('online',()=>{if(cloudLoadFailed)retryCloudLoad().catch(e=>console.warn('Reintento Firebase al volver internet:',e));else cloudSaveNow(false);if(googleAccessToken&&googleSheetsMeta.sheetId&&googleSheetsMeta.pendingAt)syncGoogleSheetsNow(false)});document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&currentUser){if(cloudLoadFailed)retryCloudLoad().catch(e=>console.warn('Reintento Firebase al volver a la página:',e));else cloudSaveNow(false);checkProtectionReminder();if(googleAccessToken&&googleSheetsMeta.sheetId&&googleSheetsMeta.pendingAt)syncGoogleSheetsNow(false)}else if(document.visibilityState==='hidden'&&currentUser){cloudSaveNow(false);if(googleAccessToken&&googleSheetsMeta.sheetId&&googleSheetsMeta.pendingAt)syncGoogleSheetsNow(false)}});
 }
 
 bindEvents();
