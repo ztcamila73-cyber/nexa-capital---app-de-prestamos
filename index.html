@@ -1126,10 +1126,82 @@ function blockedWhileSyncing(e){
   if(!risky)return false;
   showToast('Sincronizando…','Espera un par de segundos a que cargue la nube y vuelve a pulsar.','info');return true
 }
-async function loadCloudState(uid){if(!cloudDb)return;cloudLoading=true;cloudLoadFailed=false;setCloud('work','Cargando…');try{const _t0=performance.now();const remote=await readRemoteState(uid);console.info('PrestApp: datos de la nube leídos en '+Math.round(performance.now()-_t0)+' ms');if(remote?.data){applyState(remote.data)}else if((db.businesses?.length||0)+(db.clients?.length||0)+(db.loans?.length||0)>0){await cloudDb.ref(cloudPath(uid,'state')).set({data:appState(),updatedAt:new Date().toISOString()})}else{applyState({})}localStorage.setItem(CLOUD_OWNER_KEY,uid);localStorage.setItem(CLOUD_DIRTY_KEY,'0');(lastCloudOkAt=new Date().toISOString(),setCloud('ok','Nube al día'));if(googleMetaLoadedFor!==uid){googleMetaLoadedFor=uid;loadGoogleSheetsMeta().catch(()=>{})}/* La copia diaria y su estado se hacen en segundo plano para no retrasar el inicio de sesión */Promise.resolve().then(async()=>{backupRunning=true;renderBackupStatus();try{await loadBackupStatus();if(!backupIsToday()){await pushBackup('respaldo diario automático',JSON.parse(JSON.stringify(appState())));localStorage.setItem(LAST_BACKUP_KEY+'_'+uid,today())}}catch(err){console.warn('Respaldo al iniciar:',err)}finally{backupRunning=false;backupChecked=true;renderBackupStatus();refreshBackupCount()}});checkProtectionReminder()}catch(e){console.error(e);cloudLoadFailed=true;setCloud('bad','Error al cargar nube');showToast('No se pudo cargar tus datos','Para no pisar tu información guardada, no se guardarán cambios hasta que cargue bien. Revisa Internet y recarga la página. '+firebaseErrorText(e),'bad')}finally{cloudLoading=false}}
+async function loadCloudState(uid){
+  if(!cloudDb)return;
+  cloudLoading=true;cloudLoadFailed=false;setCloud('work','Cargando…');
+  try{
+    const _t0=performance.now();
+    let remote,firstError;
+    try{remote=await readRemoteState(uid)}
+    catch(e){
+      firstError=e;
+      console.warn('PrestApp: primer intento de lectura de nube falló; se reintenta:',e);
+      await new Promise(resolve=>setTimeout(resolve,700));
+      remote=await readRemoteState(uid);
+    }
+    console.info('PrestApp: datos de la nube leídos en '+Math.round(performance.now()-_t0)+' ms');
+    if(remote?.data){applyState(remote.data)}
+    else if((db.businesses?.length||0)+(db.clients?.length||0)+(db.loans?.length||0)>0){
+      await cloudDb.ref(cloudPath(uid,'state')).set({data:appState(),updatedAt:new Date().toISOString()})
+    }else{applyState({})}
+    localStorage.setItem(CLOUD_OWNER_KEY,uid);
+    localStorage.setItem(CLOUD_DIRTY_KEY,'0');
+    lastCloudOkAt=new Date().toISOString();setCloud('ok','Nube al día');
+    if(googleMetaLoadedFor!==uid){googleMetaLoadedFor=uid;loadGoogleSheetsMeta().catch(()=>{})}
+    /* La copia diaria y su estado se hacen en segundo plano para no retrasar el inicio de sesión. */
+    Promise.resolve().then(async()=>{
+      backupRunning=true;renderBackupStatus();
+      try{
+        await loadBackupStatus();
+        if(!backupIsToday()){
+          await pushBackup('respaldo diario automático',JSON.parse(JSON.stringify(appState())));
+          localStorage.setItem(LAST_BACKUP_KEY+'_'+uid,today());
+        }
+      }catch(err){console.warn('Respaldo al iniciar:',err)}
+      finally{backupRunning=false;backupChecked=true;renderBackupStatus();refreshBackupCount()}
+    });
+    checkProtectionReminder();
+  }catch(e){
+    console.error('PrestApp: no se pudo cargar el estado de Firebase:',e);
+    cloudLoadFailed=true;setCloud('bad','Error al cargar nube');
+    showToast('No se pudo cargar tus datos','PrestApp conservó los datos locales y bloqueó los guardados para evitar sobrescribir la nube. Revisa la conexión e intenta “Verificar protección” nuevamente. '+firebaseErrorText(e),'bad');
+  }finally{cloudLoading=false}
+}
 function saveLocal(){localStorage.setItem(APP_KEY,JSON.stringify(db));localStorage.setItem(CLOUD_DIRTY_KEY,'1');localStorage.setItem(CLOUD_UPDATED_KEY,new Date().toISOString());queueCloudSave();queueGoogleSheetsSync()}
 function queueCloudSave(){if(!cloudDb||!currentUser?.id||cloudLoading||cloudLoadFailed)return;cloudDirty=true;clearTimeout(cloudSaveTimer);cloudSaveTimer=setTimeout(()=>cloudSaveNow(false),180)}
-async function cloudSaveNow(notify=true){if(!cloudDb||!currentUser?.id||cloudLoadFailed)return false;if(cloudSaveInFlight){cloudDirty=true;return false}cloudSaveInFlight=true;try{do{cloudDirty=false;setCloud('work','Guardando…');const snapshot=appState(),updatedAt=new Date().toISOString();const ref=cloudDb.ref(cloudPath(currentUser.id,'state'));await ref.set({data:snapshot,updatedAt});const check=(await ref.once('value')).val();if(!check||check.updatedAt!==updatedAt)throw new Error('Firebase no confirmó la escritura.');localStorage.setItem(CLOUD_DIRTY_KEY,'0');(lastCloudOkAt=new Date().toISOString(),setCloud('ok','Nube al día'));await maybeDailyBackup(snapshot,'respaldo diario automático')}while(cloudDirty);if(notify)showToast('Nube verificada','Los datos fueron escritos y leídos nuevamente desde Firebase.');return true}catch(e){console.error(e);setCloud('bad','Sin sincronizar');if(notify)showToast('No se pudo verificar la nube',firebaseErrorText(e),'bad');return false}finally{cloudSaveInFlight=false}}
+async function cloudSaveNow(notify=true){
+  if(!cloudDb||!currentUser?.id||cloudLoadFailed)return false;
+  if(cloudSaveInFlight){cloudDirty=true;return false}
+  cloudSaveInFlight=true;
+  try{
+    do{
+      cloudDirty=false;
+      setCloud('work','Guardando…');
+      const snapshot=appState(),updatedAt=new Date().toISOString();
+      const ref=cloudDb.ref(cloudPath(currentUser.id,'state'));
+      await ref.set({data:snapshot,updatedAt});
+      const check=(await ref.once('value')).val();
+      /* Otra pestaña puede guardar justo después de nuestro set(). En ese caso updatedAt
+         cambia aunque Firebase sí haya aceptado la escritura. No marcarlo como error si
+         existe un estado válido escrito en ese instante o por una escritura posterior. */
+      const hasValidState=!!check&&!!check.data&&typeof check.data==='object';
+      const sameWrite=check?.updatedAt===updatedAt;
+      const newerWrite=typeof check?.updatedAt==='string'&&check.updatedAt>updatedAt&&hasValidState;
+      if(!sameWrite&&!newerWrite)throw new Error('Firebase no devolvió un estado válido después del guardado.');
+      localStorage.setItem(CLOUD_DIRTY_KEY,'0');
+      lastCloudOkAt=new Date().toISOString();
+      setCloud('ok','Nube al día');
+      await maybeDailyBackup(snapshot,'respaldo diario automático');
+    }while(cloudDirty);
+    if(notify)showToast('Nube verificada','Firebase confirmó que los datos están guardados.');
+    return true;
+  }catch(e){
+    console.error('PrestApp: fallo al guardar/verificar Firebase:',e);
+    setCloud('bad','Sin sincronizar');
+    if(notify)showToast('No se pudo verificar la nube',firebaseErrorText(e),'bad');
+    return false;
+  }finally{cloudSaveInFlight=false}
+}
 async function cloudBackup(reason='manual',notify=true){if(!cloudDb||!currentUser?.id)return false;try{await pushBackup(reason,JSON.parse(JSON.stringify(appState())));renderBackupStatus();refreshBackupCount();if(notify)showToast('Copia de seguridad creada','La copia quedó guardada en Firebase.');return true}catch(e){if(notify)showToast('No se pudo crear la copia',firebaseErrorText(e),'bad');return false}}
 async function maybeDailyBackup(snapshot,reason='respaldo diario automático'){if(!currentUser?.id||!cloudDb||backupRunning)return false;const key=LAST_BACKUP_KEY+'_'+currentUser.id;if(localStorage.getItem(key)===today()&&backupIsToday())return false;try{await pushBackup(reason,JSON.parse(JSON.stringify(snapshot)));localStorage.setItem(key,today());renderBackupStatus();refreshBackupCount();return true}catch(e){console.warn('Respaldo automático:',e);return false}}
 async function loadBackupStatus(){
@@ -1558,18 +1630,6 @@ async function loadGoogleSheetsMeta(){
     if(googleSheetsMeta.sheetId&&!res.val.sheetId)persistGoogleSheetsMeta().catch(()=>{});
   }else if(googleSheetsMeta.sheetId){googleMetaLoaded=true}
   renderProtectionBanner();
-  /* Recuperación tras recargar: si el permiso de Google aún es válido, reanuda la sincronización pendiente
-     usando el mismo spreadsheet. Los tokens OAuth vencidos no se pueden renovar de forma permanente
-     desde un HTML estático; en ese caso se informa que hace falta autorización del usuario. */
-  if(googleSheetsMeta.sheetId && googleSheetsMeta.pendingAt){
-    if(googleAccessToken && googleTokenExpiresAt>Date.now()+60000){
-      setTimeout(()=>{if(currentUser?.id===uid)syncGoogleSheetsWhenFree(false)},0);
-    }else{
-      googleReconnectRequired=true;
-      googleConnectionIssue='Hay cambios pendientes, pero el permiso de Google venció. Pulsa “Reconectar Google” para actualizar la misma hoja.';
-      renderGoogleSheetsState();
-    }
-  }
   if(!googleSheetsMeta.sheetId&&res.ok&&googleSheetsConfigured()&&!googleOffToastShown){googleOffToastShown=true;setTimeout(()=>showToast('Falta conectar tu copia en Google','Tu información todavía NO se guarda en el respaldo de Google. Entra a Ajustes → Protección de datos y pulsa “Conectar Google”.','bad'),1800)}
   if(!res.ok&&!googleSheetsMeta.sheetId)showToast('No se pudo comprobar Google Sheets','No se alcanzó a leer el estado de la copia de Google. Revisa tu Internet; no se perdió nada.','info');
   /* 3) Cambios en vivo desde otros dispositivos (solo si el SDK logra conectar) */
@@ -1713,31 +1773,14 @@ function requestGoogleAccessInner(){
 async function fetchGoogleEmail(){
   try{const r=await googleApi('https://www.googleapis.com/drive/v3/about?fields=user(emailAddress)');const m=r?.user?.emailAddress;if(m){googleSheetsMeta.googleEmail=m;persistGoogleSheetsMeta().catch(()=>{})}}catch(e){console.warn('Correo de Google:',e)}
 }
-async function googleApi(url,options={},_renewedAfter401=false){
+async function googleApi(url,options={}){
   if(!googleAccessToken)throw new Error('Autoriza Google para continuar la sincronización.');
   const headers={...(options.headers||{}),Authorization:`Bearer ${googleAccessToken}`};
   if(options.body&&!headers['Content-Type'])headers['Content-Type']='application/json';
   const res=await fetch(url,{...options,headers});
   const data=await res.json().catch(()=>({}));
   if(!res.ok){
-    /* Si Google rechaza el token por vencimiento, intenta renovarlo una vez y repetir
-       la misma petición. Google Identity Services puede necesitar interacción del usuario;
-       si el navegador bloquea el flujo, se conserva el aviso de reconexión. */
-    if(res.status===401){
-      setGoogleToken('');googleLastRenewTry=0;
-      if(!_renewedAfter401&&googleSheetsMeta.sheetId&&googleSheetsConfigured()){
-        try{
-          await requestGoogleAccess();
-          return await googleApi(url,options,true);
-        }catch(renewErr){
-          googleReconnectRequired=true;googleConnectionIssue='Google necesita renovar la autorización. Pulsa “Reconectar Google” si el navegador no permitió hacerlo automáticamente.';
-          renderGoogleSheetsState();
-          throw new Error(googleConnectionIssue);
-        }
-      }
-      googleReconnectRequired=true;renderGoogleSheetsState();
-      throw new Error('La autorización de Google venció. Pulsa “Reconectar Google” para continuar actualizando la segunda copia.');
-    }
+    if(res.status===401){setGoogleToken('');googleLastRenewTry=0;googleReconnectRequired=true;renderGoogleSheetsState();throw new Error('La autorización de Google venció. Reconecta Google para continuar actualizando la segunda copia.')}
     const raw=data?.error?.message||`Google API ${res.status}`,low=raw.toLowerCase();
     if(low.includes('has not been used')||low.includes('disabled')||low.includes('accessnotconfigured'))throw new Error('Falta habilitar Google Sheets API en Google Cloud. Es una configuración única del administrador.');
     if(low.includes('origin')||low.includes('redirect_uri_mismatch')||low.includes('unauthorized_client'))throw new Error(`En Google Cloud agrega ${location.origin} en Orígenes de JavaScript autorizados del OAuth Client. No se configura en Firebase Authentication.`);
@@ -1867,13 +1910,6 @@ function bindEvents(){
     const assign=e.target.closest('[data-assign-payment]');if(assign){const total=parseMoney($('payTotal')?.value),kind=assign.dataset.assignPayment;if(kind==='interest'){$('payInterest').value=total?new Intl.NumberFormat('es-CO').format(total):'0';$('payCapital').value='0'}else{$('payInterest').value='0';$('payCapital').value=total?new Intl.NumberFormat('es-CO').format(total):'0'}updatePaymentImpact($('modalContent')?.querySelector('[data-save-payment]')?.dataset.savePayment);return}const sp=e.target.closest('[data-save-payment]');if(sp)savePayment(sp.dataset.savePayment);
     const backClient=e.target.closest('[data-back-client]');if(backClient)openClientDetail(backClient.dataset.backClient);
     const hist=e.target.closest('[data-loan-history]');if(hist)openLoanHistory(hist.dataset.loanHistory);
-  });
-  window.addEventListener('pagehide',()=>{
-    if(!currentUser)return;
-    /* No se confía en operaciones asíncronas al cerrar: el pendiente se persiste antes de salir,
-       y se reintenta al volver a abrir la aplicación. */
-    if(localStorage.getItem(CLOUD_DIRTY_KEY)==='1' && googleSheetsMeta.sheetId){googleSheetsMeta.pendingAt=googleSheetsMeta.pendingAt||new Date().toISOString();writeLocalGoogleMeta();}
-    if(localStorage.getItem(CLOUD_DIRTY_KEY)==='1')void cloudSaveNow(false);
   });
   $('loanAmount').addEventListener('input',e=>{formatMoneyField(e.target);updateLoanModeUI()});$('loanRate').addEventListener('input',updateLoanCalc);$('loanPaymentMode').addEventListener('change',updateLoanModeUI);$('loanInterestMode')?.addEventListener('change',updateLoanModeUI);$('loanFixedInterest')?.addEventListener('input',e=>{formatMoneyField(e.target);updateLoanCalc()});$('loanClientPhone').addEventListener('input',updateExistingClientNote);$('loanClientName').addEventListener('blur',updateExistingClientNote);$('loanStartDate').addEventListener('change',()=>{const f=$('loanFirstDue');if(f&&!f.dataset.manual&&$('loanStartDate').value)f.value=addMonthsISO($('loanStartDate').value,1);updateLoanModeUI()});$('loanFirstDue')?.addEventListener('change',()=>{$('loanFirstDue').dataset.manual='1'});$('homeSearch').addEventListener('input',()=>renderSearchResults('homeSearchResults',$('homeSearch').value.trim()));$('clientSearch').addEventListener('input',renderClients);$('collectionSearch').addEventListener('input',renderCollections);$('clientYear').addEventListener('change',renderClients);$('historyYear').addEventListener('change',renderHistory);$('modal').addEventListener('click',e=>{if(e.target===$('modal'))closeModal()});document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.activeElement?.id==='businessNameInput'){e.preventDefault();saveBusinessName()}});window.addEventListener('online',()=>{if(cloudLoadFailed)retryCloudLoad();else cloudSaveNow(false);if(googleAccessToken&&googleSheetsMeta.sheetId&&googleSheetsMeta.pendingAt)syncGoogleSheetsNow(false)});document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&currentUser){cloudSaveNow(false);checkProtectionReminder();if(googleAccessToken&&googleSheetsMeta.sheetId&&googleSheetsMeta.pendingAt)syncGoogleSheetsNow(false)}else if(document.visibilityState==='hidden'&&currentUser){cloudSaveNow(false);if(googleAccessToken&&googleSheetsMeta.sheetId&&googleSheetsMeta.pendingAt)syncGoogleSheetsNow(false)}});
 }
