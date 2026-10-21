@@ -1113,6 +1113,9 @@ async function retryCloudLoad(){
   return false
 }
 let cloudLoadFailed=false;
+/* Reintento automático adicional de carga al iniciar sesión: evita depender del botón manual
+   cuando Firebase responde tarde. Máximo un reintento extra por fallo inicial y usuario. */
+let cloudAutoRetryCount=0,cloudAutoRetryTimer=null,cloudAutoRetryUid='';
 function afterBackgroundCloudLoad(){
   if(!currentUser)return;
   if(currentBusinessId){if(currentBusiness())refreshAll();else renderBusinessSelector()}
@@ -1146,6 +1149,8 @@ async function loadCloudState(uid){
     }else{applyState({})}
     localStorage.setItem(CLOUD_OWNER_KEY,uid);
     localStorage.setItem(CLOUD_DIRTY_KEY,'0');
+    if(cloudAutoRetryTimer){clearTimeout(cloudAutoRetryTimer);cloudAutoRetryTimer=null}
+    cloudAutoRetryCount=0;cloudAutoRetryUid=uid;
     lastCloudOkAt=new Date().toISOString();setCloud('ok','Nube al día');
     if(googleMetaLoadedFor!==uid){googleMetaLoadedFor=uid;loadGoogleSheetsMeta().catch(()=>{})}
     /* La copia diaria y su estado se hacen en segundo plano para no retrasar el inicio de sesión. */
@@ -1164,7 +1169,23 @@ async function loadCloudState(uid){
   }catch(e){
     console.error('PrestApp: no se pudo cargar el estado de Firebase:',e);
     cloudLoadFailed=true;setCloud('bad','Error al cargar nube');
-    showToast('No se pudo cargar tus datos','PrestApp conservó los datos locales y bloqueó los guardados para evitar sobrescribir la nube. Revisa la conexión e intenta “Verificar protección” nuevamente. '+firebaseErrorText(e),'bad');
+    /* No reintentar errores de permisos: necesitan corregir reglas/configuración. En fallos
+       transitorios hacemos un reintento automático extra y mantenemos bloqueados los guardados. */
+    const permissionDenied=e?.code==='PERMISSION_DENIED'||e?.code==='permission_denied';
+    if(!permissionDenied&&cloudAutoRetryCount<1&&currentUser?.id===uid){
+      cloudAutoRetryCount++;cloudAutoRetryUid=uid;
+      if(cloudAutoRetryTimer)clearTimeout(cloudAutoRetryTimer);
+      setCloud('work','Reintentando conexión…');
+      showToast('Reconectando Firebase','PrestApp volverá a intentar cargar tus datos automáticamente. Tus datos locales se conservan y los guardados permanecen protegidos.','info');
+      cloudAutoRetryTimer=setTimeout(()=>{
+        cloudAutoRetryTimer=null;
+        if(currentUser?.id===uid&&cloudDb&&!cloudLoading){
+          loadCloudState(uid).then(()=>{if(!cloudLoadFailed)afterBackgroundCloudLoad()}).catch(err=>console.warn('Reintento automático Firebase:',err));
+        }
+      },1600);
+    }else{
+      showToast('No se pudo cargar tus datos','PrestApp conservó los datos locales y bloqueó los guardados para evitar sobrescribir la nube. Revisa la conexión y usa “Verificar protección” solo si el reintento automático falla. '+firebaseErrorText(e),'bad');
+    }
   }finally{cloudLoading=false}
 }
 function saveLocal(){localStorage.setItem(APP_KEY,JSON.stringify(db));localStorage.setItem(CLOUD_DIRTY_KEY,'1');localStorage.setItem(CLOUD_UPDATED_KEY,new Date().toISOString());queueCloudSave();queueGoogleSheetsSync()}
