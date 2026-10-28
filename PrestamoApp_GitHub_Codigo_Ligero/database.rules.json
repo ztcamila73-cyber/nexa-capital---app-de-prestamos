@@ -1,0 +1,13 @@
+{
+  "rules": {
+    "accounts": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        "data": { ".write": "auth != null && auth.uid === $uid && newData.child('schema').val() === 1" },
+        "$other": {".write": false}
+      }
+    },
+    ".read": false,
+    ".write": false
+  }
+}
