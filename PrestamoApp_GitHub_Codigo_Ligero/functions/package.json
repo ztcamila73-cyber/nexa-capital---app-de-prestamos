@@ -1,5 +1,0 @@
-{
-  "name":"prestamoapp-functions","type":"module","private":true,"engines":{"node":"22"},
-  "main":"index.mjs",
-  "dependencies":{"firebase-admin":"^13.0.0","firebase-functions":"^6.3.0","googleapis":"^144.0.0"}
-}
